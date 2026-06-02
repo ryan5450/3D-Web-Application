@@ -72,6 +72,7 @@ button:disabled {
   background:
     linear-gradient(120deg, rgba(8, 127, 111, 0.07), rgba(47, 95, 159, 0.08)),
     #f2f5f8;
+  transition: background 480ms ease;
 }
 
 .auth-panel {
@@ -84,6 +85,10 @@ button:disabled {
   background: rgba(255, 255, 255, 0.96);
   border-right: 1px solid var(--line);
   box-shadow: 18px 0 70px rgba(17, 24, 39, 0.08);
+  transition:
+    background 480ms ease,
+    border-color 480ms ease,
+    box-shadow 480ms ease;
 }
 
 .auth-copy {
@@ -101,6 +106,10 @@ button:disabled {
   font-size: 12px;
   font-weight: 760;
   text-transform: uppercase;
+  transition:
+    background 420ms ease,
+    border-color 420ms ease,
+    color 420ms ease;
 }
 
 .auth-panel h1 {
@@ -109,6 +118,7 @@ button:disabled {
   line-height: 1.02;
   letter-spacing: 0;
   font-weight: 780;
+  transition: color 420ms ease;
 }
 
 .auth-panel p {
@@ -116,6 +126,7 @@ button:disabled {
   line-height: 1.65;
   margin: 0;
   font-size: 16px;
+  transition: color 420ms ease;
 }
 
 .auth-highlights {
@@ -137,6 +148,10 @@ button:disabled {
   color: #415064;
   font-size: 13px;
   font-weight: 760;
+  transition:
+    background 420ms ease,
+    border-color 420ms ease,
+    color 420ms ease;
 }
 
 .auth-form {
@@ -149,6 +164,10 @@ button:disabled {
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.9)),
     #ffffff;
   box-shadow: 0 22px 58px rgba(17, 24, 39, 0.1);
+  transition:
+    background 480ms ease,
+    border-color 480ms ease,
+    box-shadow 480ms ease;
 }
 
 .form-heading {
@@ -163,6 +182,7 @@ button:disabled {
   color: var(--dark);
   font-size: 18px;
   font-weight: 780;
+  transition: color 420ms ease;
 }
 
 .form-heading span {
@@ -171,6 +191,7 @@ button:disabled {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
+  transition: color 420ms ease;
 }
 
 .form-icon {
@@ -181,6 +202,9 @@ button:disabled {
   border-radius: 8px;
   background: #e6f4ef;
   color: var(--accent-strong);
+  transition:
+    background 420ms ease,
+    color 420ms ease;
 }
 
 .auth-form label {
@@ -189,6 +213,7 @@ button:disabled {
   color: var(--dark);
   font-size: 14px;
   font-weight: 760;
+  transition: color 420ms ease;
 }
 
 .auth-form input {
@@ -199,6 +224,11 @@ button:disabled {
   color: var(--ink);
   background: #ffffff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    background 420ms ease,
+    border-color 420ms ease,
+    box-shadow 420ms ease,
+    color 420ms ease;
 }
 
 .auth-form input:focus {
@@ -215,6 +245,9 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #edf2f7;
+  transition:
+    background 420ms ease,
+    border-color 420ms ease;
 }
 
 .mode-switch button {
@@ -223,6 +256,10 @@ button:disabled {
   background: transparent;
   color: var(--muted);
   font-weight: 780;
+  transition:
+    background 260ms ease,
+    color 420ms ease,
+    box-shadow 260ms ease;
 }
 
 .mode-switch button.active {
@@ -289,6 +326,7 @@ button:disabled {
     radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.66), transparent 28%),
     linear-gradient(135deg, rgba(8, 127, 111, 0.18), rgba(47, 95, 159, 0.18)),
     #dbe5ee;
+  transition: background 560ms ease;
 }
 
 .preview-stage {
@@ -318,6 +356,10 @@ button:disabled {
   background: rgba(248, 250, 252, 0.78);
   box-shadow: 0 34px 90px rgba(17, 24, 39, 0.22);
   backdrop-filter: blur(14px);
+  transition:
+    background 520ms ease,
+    border-color 520ms ease,
+    box-shadow 520ms ease;
 }
 
 .preview-topbar {
@@ -328,6 +370,9 @@ button:disabled {
   padding: 0 16px;
   border-bottom: 1px solid rgba(216, 224, 234, 0.78);
   background: rgba(255, 255, 255, 0.82);
+  transition:
+    background 520ms ease,
+    border-color 520ms ease;
 }
 
 .preview-topbar span {
@@ -335,6 +380,7 @@ button:disabled {
   height: 10px;
   border-radius: 50%;
   background: #cbd5e1;
+  transition: background 420ms ease;
 }
 
 .preview-room {
@@ -343,6 +389,7 @@ button:disabled {
   overflow: hidden;
   perspective: 760px;
   background: linear-gradient(180deg, #edf3f7 0%, #d6e1ea 100%);
+  transition: background 520ms ease;
 }
 
 .room-wall {
@@ -351,6 +398,7 @@ button:disabled {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.36), transparent 40%),
     #cdd7e2;
+  transition: background 520ms ease;
 }
 
 .room-floor {
@@ -366,6 +414,7 @@ button:disabled {
     linear-gradient(90deg, rgba(17, 24, 39, 0.08) 1px, transparent 1px),
     #d8d0c5;
   background-size: 44px 44px;
+  transition: background 520ms ease;
 }
 
 .room-sofa,
@@ -461,11 +510,16 @@ button:disabled {
   background: rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px);
+  transition:
+    background 520ms ease,
+    border-color 520ms ease,
+    box-shadow 520ms ease;
 }
 
 .preview-card strong {
   color: var(--dark);
   font-size: 20px;
+  transition: color 420ms ease;
 }
 
 .preview-card span {
@@ -473,6 +527,7 @@ button:disabled {
   font-size: 13px;
   font-weight: 760;
   line-height: 1.45;
+  transition: color 420ms ease;
 }
 
 .auth-page.auth-night {
