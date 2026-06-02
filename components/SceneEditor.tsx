@@ -103,12 +103,46 @@ const modelUrls: Partial<Record<ObjectKind, string>> = {
   customRobot: "/models/custom-robot.glb"
 };
 
-const starterObjects: SceneObject[] = [
-  { id: "starter-sofa", kind: "sofa", position: { x: -1.8, y: 0, z: -2.2 }, scale: 1, rotationY: 0 },
-  { id: "starter-chair", kind: "chair", position: { x: 2.25, y: 0, z: -1.6 }, scale: 1, rotationY: -0.55 },
-  { id: "starter-table", kind: "table", position: { x: 0.9, y: 0, z: 0.35 }, scale: 1, rotationY: 0 },
-  { id: "starter-plant", kind: "plant", position: { x: -4.15, y: 0, z: -2.65 }, scale: 1, rotationY: 0 }
-];
+const starterScenes: Record<string, { theme: ThemeKey; objects: SceneObject[] }> = {
+  "room-1": {
+    theme: "cozy",
+    objects: [
+      { id: "room1-sofa", kind: "sofa", color: "#475569", position: { x: -1.8, y: 0, z: -2.2 }, scale: 1, rotationY: 0 },
+      { id: "room1-chair", kind: "chair", color: "#8b6f52", position: { x: 2.25, y: 0, z: -1.6 }, scale: 1, rotationY: -0.55 },
+      { id: "room1-table", kind: "table", color: "#8b6f52", position: { x: 0.9, y: 0, z: 0.35 }, scale: 1, rotationY: 0 },
+      { id: "room1-plant", kind: "plant", position: { x: -4.15, y: 0, z: -2.65 }, scale: 1, rotationY: 0 },
+      { id: "room1-lamp", kind: "lamp", color: "#f59e0b", position: { x: 3.75, y: 0.05, z: -2.6 }, scale: 1, rotationY: 0 },
+      { id: "room1-rug", kind: "rug", color: "#f8fafc", position: { x: 0.2, y: 0, z: 0.85 }, scale: 1.55, rotationY: 0 }
+    ]
+  },
+  "room-2": {
+    theme: "studio",
+    objects: [
+      { id: "room2-table", kind: "table", color: "#334155", position: { x: -0.8, y: 0, z: -1.1 }, scale: 1.25, rotationY: 0.1 },
+      { id: "room2-chair", kind: "chair", color: "#0f9f7a", position: { x: -0.9, y: 0, z: 0.25 }, scale: 1, rotationY: 2.95 },
+      { id: "room2-tv", kind: "tv", position: { x: -0.9, y: 0, z: -2.1 }, scale: 0.95, rotationY: 0 },
+      { id: "room2-bookshelf", kind: "bookshelf", color: "#8b6f52", position: { x: 3.1, y: 0, z: -2.3 }, scale: 1.1, rotationY: -0.12 },
+      { id: "room2-cabinet", kind: "cabinet", color: "#64748b", position: { x: 3.0, y: 0, z: 0.45 }, scale: 1, rotationY: -0.08 },
+      { id: "room2-torus", kind: "torus", color: "#14b8a6", position: { x: -3.4, y: 0.55, z: -0.85 }, scale: 1, rotationY: 0 }
+    ]
+  },
+  "room-3": {
+    theme: "play",
+    objects: [
+      { id: "room3-bed", kind: "bed", color: "#8b5cf6", position: { x: -2.9, y: 0, z: -2.15 }, scale: 1, rotationY: 0.05 },
+      { id: "room3-rug", kind: "rug", color: "#f59e0b", position: { x: 0.1, y: 0, z: 0.65 }, scale: 1.8, rotationY: 0.25 },
+      { id: "room3-sphere", kind: "sphere", color: "#ef4444", position: { x: 1.85, y: 0.55, z: 0.2 }, scale: 1, rotationY: 0 },
+      { id: "room3-cube", kind: "cube", color: "#2563eb", position: { x: 3.25, y: 0.55, z: 0.95 }, scale: 0.9, rotationY: 0.55 },
+      { id: "room3-cone", kind: "cone", color: "#0f9f7a", position: { x: 2.8, y: 0.6, z: -1.6 }, scale: 1, rotationY: 0 },
+      { id: "room3-robot", kind: "customRobot", position: { x: -0.65, y: 0, z: -1.4 }, scale: 0.018, rotationY: 0.55 },
+      { id: "room3-plant", kind: "plant", position: { x: 4.35, y: 0, z: -2.45 }, scale: 0.95, rotationY: 0 }
+    ]
+  }
+};
+
+function starterForSlot(slot: string) {
+  return starterScenes[slot] || starterScenes["room-1"];
+}
 
 type Props = {
   user: User;
@@ -227,16 +261,18 @@ export default function SceneEditor({ user, onLogout }: Props) {
   async function loadScene(slot: string) {
     setStatus("Loading scene...");
     const response = await fetch(`/api/scene?slot=${slot}`);
+    const starter = starterForSlot(slot);
     if (response.ok) {
       const data = await response.json();
       const loadedObjects = data.objects.map(cleanObject);
-      setObjects(loadedObjects.length ? loadedObjects : starterObjects);
-      setTheme((data.theme || "cozy") as ThemeKey);
+      setObjects(loadedObjects.length ? loadedObjects : starter.objects);
+      setTheme(loadedObjects.length ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
       setSelectedObjectId(null);
-      setStatus(loadedObjects.length ? "Scene loaded" : "Starter room loaded");
+      setStatus(loadedObjects.length ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     } else {
-      setObjects(starterObjects);
-      setStatus("Starter room loaded");
+      setObjects(starter.objects);
+      setTheme(starter.theme);
+      setStatus(`${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     }
   }
 
@@ -335,9 +371,11 @@ export default function SceneEditor({ user, onLogout }: Props) {
   }
 
   function resetRoom() {
-    setObjects(starterObjects);
+    const starter = starterForSlot(sceneSlot);
+    setObjects(starter.objects);
+    setTheme(starter.theme);
     setSelectedObjectId(null);
-    setStatus("Room reset");
+    setStatus(`${sceneSlots.find((item) => item.value === sceneSlot)?.label || "Room"} reset`);
   }
 
   function downloadScreenshot() {
