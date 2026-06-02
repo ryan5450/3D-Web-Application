@@ -4,7 +4,7 @@ import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { Environment, Grid, Html, OrbitControls, RoundedBox, useCursor, useGLTF } from "@react-three/drei";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { Camera, Copy, LogOut, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { Camera, Copy, LogOut, Moon, Plus, RotateCcw, Save, Sun, Trash2 } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
@@ -389,6 +389,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("cozy");
   const [sceneSlot, setSceneSlot] = useState("room-1");
+  const [nightMode, setNightMode] = useState(false);
   const [status, setStatus] = useState("Loading scene...");
 
   const selectedObject = objects.find((object) => object.id === selectedObjectId) || null;
@@ -541,9 +542,15 @@ export default function SceneEditor({ user, onLogout }: Props) {
     toast.success("Screenshot downloaded");
   }
 
+  function toggleNightMode() {
+    setNightMode((current) => !current);
+    playSound("switch");
+    toast(nightMode ? "Day mode enabled" : "Night mode enabled");
+  }
+
   return (
     <Tooltip.Provider>
-      <main className="scene-page">
+      <main className={nightMode ? "scene-page night-mode" : "scene-page"}>
       <div className="scene-toolbar">
         <div className="toolbar-group">
           <select
@@ -625,6 +632,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
             <Save size={18} />
             Save
           </button>
+          <Tip label={nightMode ? "Switch to day mode" : "Switch to night mode"}>
+            <button className={nightMode ? "night-toggle active" : "night-toggle"} type="button" onClick={toggleNightMode}>
+              {nightMode ? <Sun size={18} /> : <Moon size={18} />}
+              {nightMode ? "Day" : "Night"}
+            </button>
+          </Tip>
           <Tip label="Download screenshot">
             <button className="ghost icon-command" type="button" onClick={downloadScreenshot}>
               <Camera size={18} />
@@ -647,11 +660,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
           gl={{ preserveDrawingBuffer: true }}
           shadows={{ type: THREE.PCFShadowMap }}
         >
-          <color attach="background" args={[themes[theme].bg]} />
-          <ambientLight intensity={0.78} />
-          <directionalLight castShadow intensity={1.4} position={[5, 8, 5]} />
+          <color attach="background" args={[nightMode ? "#0f172a" : themes[theme].bg]} />
+          <ambientLight intensity={nightMode ? 0.18 : 0.78} />
+          <directionalLight castShadow intensity={nightMode ? 0.28 : 1.4} position={[5, 8, 5]} />
           <Suspense fallback={<Html center>Loading 3D scene...</Html>}>
             <SceneRoom
+              nightMode={nightMode}
               objects={objects}
               sceneSlot={sceneSlot}
               selectedObjectId={selectedObjectId}
@@ -738,6 +752,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
 }
 
 function SceneRoom({
+  nightMode,
   objects,
   sceneSlot,
   selectedObjectId,
@@ -746,6 +761,7 @@ function SceneRoom({
   onMove,
   onSelect
 }: {
+  nightMode: boolean;
   objects: SceneObject[];
   sceneSlot: string;
   selectedObjectId: string | null;
@@ -756,7 +772,7 @@ function SceneRoom({
 }) {
   return (
     <>
-      <RoomShell sceneSlot={sceneSlot} theme={theme} />
+      <RoomShell nightMode={nightMode} sceneSlot={sceneSlot} theme={theme} />
       {objects.map((object) => (
         <DraggableObject
           key={object.id}
@@ -772,28 +788,28 @@ function SceneRoom({
   );
 }
 
-function RoomShell({ sceneSlot, theme }: { sceneSlot: string; theme: ThemeKey }) {
+function RoomShell({ nightMode, sceneSlot, theme }: { nightMode: boolean; sceneSlot: string; theme: ThemeKey }) {
   const colors = themes[theme];
-  if (sceneSlot === "room-2") return <StudioRoom colors={colors} />;
-  if (sceneSlot === "room-3") return <PlayLabRoom colors={colors} />;
-  return <LoungeRoom colors={colors} />;
+  if (sceneSlot === "room-2") return <StudioRoom colors={colors} nightMode={nightMode} />;
+  if (sceneSlot === "room-3") return <PlayLabRoom colors={colors} nightMode={nightMode} />;
+  return <LoungeRoom colors={colors} nightMode={nightMode} />;
 }
 
-function LoungeRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
+function LoungeRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey]; nightMode: boolean }) {
   return (
     <>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color={colors.floor} roughness={0.82} />
+        <meshStandardMaterial color={nightMode ? "#293241" : colors.floor} roughness={0.82} />
       </mesh>
-      <Grid args={[14, 14]} cellColor="#a7adb5" cellSize={1} fadeDistance={22} fadeStrength={1} position={[0, 0.01, 0]} sectionColor={colors.grid} sectionSize={2} />
+      <Grid args={[14, 14]} cellColor={nightMode ? "#2f3a4b" : "#a7adb5"} cellSize={1} fadeDistance={22} fadeStrength={1} position={[0, 0.01, 0]} sectionColor={nightMode ? "#556070" : colors.grid} sectionSize={2} />
       <mesh receiveShadow position={[0, 2.25, -6.9]}>
         <boxGeometry args={[14, 4.5, 0.16]} />
-        <meshStandardMaterial color={colors.wall} roughness={0.86} />
+        <meshStandardMaterial color={nightMode ? "#1f2937" : colors.wall} roughness={0.86} />
       </mesh>
       <mesh receiveShadow position={[-6.9, 2.25, 0]}>
         <boxGeometry args={[0.16, 4.5, 14]} />
-        <meshStandardMaterial color={colors.side} roughness={0.84} />
+        <meshStandardMaterial color={nightMode ? "#273142" : colors.side} roughness={0.84} />
       </mesh>
       {[-4.4, -3.8, -3.2].map((x) => (
         <RoundedBox key={x} args={[0.08, 4.2, 0.1]} position={[x, 2.1, -6.72]} radius={0.02} smoothness={4}>
@@ -801,44 +817,48 @@ function LoungeRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
         </RoundedBox>
       ))}
       <RoundedBox args={[2.4, 1.28, 0.08]} position={[3.1, 2.75, -6.73]} radius={0.04} smoothness={8}>
-        <meshStandardMaterial color="#dbeafe" roughness={0.22} metalness={0.08} />
+        <meshStandardMaterial color={nightMode ? "#f8e7bd" : "#dbeafe"} emissive={nightMode ? "#d9992f" : "#000000"} emissiveIntensity={nightMode ? 0.75 : 0} roughness={0.22} metalness={0.08} />
       </RoundedBox>
       <RoundedBox args={[2.62, 1.46, 0.05]} position={[3.1, 2.75, -6.78]} radius={0.04} smoothness={8}>
         <meshStandardMaterial color="#344054" roughness={0.45} />
       </RoundedBox>
-      <mesh castShadow position={[0.4, 3.85, -1.6]}>
-        <sphereGeometry args={[0.32, 32, 16]} />
-        <meshStandardMaterial color="#f8e7bd" emissive="#d9992f" emissiveIntensity={0.28} roughness={0.4} />
-      </mesh>
-      <pointLight color="#f8e7bd" distance={7} intensity={0.68} position={[0.4, 3.55, -1.6]} />
+      {nightMode && (
+        <>
+          <pointLight color="#f8e7bd" distance={8} intensity={1.15} position={[3.1, 2.75, -4.9]} />
+          <pointLight color="#ffe6a3" distance={5} intensity={0.68} position={[-2.2, 2.6, -5.7]} />
+          <RoundedBox args={[0.48, 0.18, 0.08]} position={[-2.2, 2.6, -6.64]} radius={0.04} smoothness={8}>
+            <meshStandardMaterial color="#fff4c8" emissive="#f59e0b" emissiveIntensity={1.1} roughness={0.32} />
+          </RoundedBox>
+        </>
+      )}
       <WallFrame position={[-1.8, 2.45, -6.78]} />
       <WallFrame position={[1.05, 2.9, -6.78]} tall />
     </>
   );
 }
 
-function StudioRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
+function StudioRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey]; nightMode: boolean }) {
   return (
     <>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color={colors.floor} roughness={0.92} />
+        <meshStandardMaterial color={nightMode ? "#1e293b" : colors.floor} roughness={0.92} />
       </mesh>
-      <Grid args={[14, 14]} cellColor="#b8c2cf" cellSize={0.5} fadeDistance={18} fadeStrength={1.2} position={[0, 0.012, 0]} sectionColor="#64748b" sectionSize={2} />
+      <Grid args={[14, 14]} cellColor={nightMode ? "#334155" : "#b8c2cf"} cellSize={0.5} fadeDistance={18} fadeStrength={1.2} position={[0, 0.012, 0]} sectionColor={nightMode ? "#60a5fa" : "#64748b"} sectionSize={2} />
       <mesh receiveShadow position={[0, 2.45, -6.9]}>
         <boxGeometry args={[14, 4.9, 0.16]} />
-        <meshStandardMaterial color="#cfd6df" roughness={0.9} />
+        <meshStandardMaterial color={nightMode ? "#111827" : "#cfd6df"} roughness={0.9} />
       </mesh>
       <mesh receiveShadow position={[6.9, 2.45, 0]}>
         <boxGeometry args={[0.16, 4.9, 14]} />
-        <meshStandardMaterial color="#dde3ea" roughness={0.88} />
+        <meshStandardMaterial color={nightMode ? "#1f2937" : "#dde3ea"} roughness={0.88} />
       </mesh>
       <RoundedBox args={[5.6, 2.55, 0.08]} position={[-2.1, 2.7, -6.74]} radius={0.03} smoothness={8}>
         <meshStandardMaterial color="#1f2937" roughness={0.42} />
       </RoundedBox>
       {[-3.65, -2.1, -0.55].map((x) => (
         <RoundedBox key={x} args={[1.35, 2.22, 0.09]} position={[x, 2.7, -6.68]} radius={0.025} smoothness={8}>
-          <meshStandardMaterial color="#bfdbfe" roughness={0.16} metalness={0.08} transparent opacity={0.72} />
+          <meshStandardMaterial color={nightMode ? "#93c5fd" : "#bfdbfe"} emissive={nightMode ? "#2563eb" : "#000000"} emissiveIntensity={nightMode ? 0.7 : 0} roughness={0.16} metalness={0.08} transparent opacity={0.72} />
         </RoundedBox>
       ))}
       <RoundedBox args={[3.4, 0.18, 2.1]} position={[2.65, 0.1, 2.0]} radius={0.06} smoothness={8}>
@@ -857,33 +877,39 @@ function StudioRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
           <meshStandardMaterial color={palette[index + 1]} roughness={0.55} />
         </RoundedBox>
       ))}
-      <directionalLight castShadow color="#dbeafe" intensity={0.55} position={[-3, 5, 2]} />
+      <directionalLight castShadow color="#dbeafe" intensity={nightMode ? 0.18 : 0.55} position={[-3, 5, 2]} />
+      {nightMode && (
+        <>
+          <pointLight color="#93c5fd" distance={8} intensity={1.1} position={[-2.1, 2.9, -4.8]} />
+          <pointLight color="#f8fafc" distance={4.5} intensity={0.62} position={[2.45, 1.8, -5.8]} />
+        </>
+      )}
     </>
   );
 }
 
-function PlayLabRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
+function PlayLabRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey]; nightMode: boolean }) {
   return (
     <>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color="#d7f0de" roughness={0.88} />
+        <meshStandardMaterial color={nightMode ? "#173224" : "#d7f0de"} roughness={0.88} />
       </mesh>
       {[-4.5, -1.5, 1.5, 4.5].map((x, rowIndex) =>
         [-4.5, -1.5, 1.5, 4.5].map((z, columnIndex) => (
           <mesh key={`${x}-${z}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, -0.025, z]}>
             <planeGeometry args={[2.8, 2.8]} />
-            <meshStandardMaterial color={(rowIndex + columnIndex) % 2 === 0 ? "#bfe3d0" : "#f8d7a7"} roughness={0.86} />
+            <meshStandardMaterial color={nightMode ? ((rowIndex + columnIndex) % 2 === 0 ? "#1f3b2b" : "#3d3320") : ((rowIndex + columnIndex) % 2 === 0 ? "#bfe3d0" : "#f8d7a7")} roughness={0.86} />
           </mesh>
         ))
       )}
       <mesh receiveShadow position={[0, 1.95, -6.9]}>
         <boxGeometry args={[14, 3.9, 0.16]} />
-        <meshStandardMaterial color={colors.wall} roughness={0.78} />
+        <meshStandardMaterial color={nightMode ? "#172033" : colors.wall} roughness={0.78} />
       </mesh>
       <mesh receiveShadow position={[-6.9, 1.95, 0]}>
         <boxGeometry args={[0.16, 3.9, 14]} />
-        <meshStandardMaterial color={colors.side} roughness={0.78} />
+        <meshStandardMaterial color={nightMode ? "#1f2937" : colors.side} roughness={0.78} />
       </mesh>
       {[
         { color: "#ef4444", position: [-4.6, 2.45, -6.72] as [number, number, number] },
@@ -892,7 +918,7 @@ function PlayLabRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
         { color: "#0f9f7a", position: [0.5, 2.85, -6.72] as [number, number, number] }
       ].map((panel) => (
         <RoundedBox key={panel.color} args={[1.05, 1.05, 0.08]} position={panel.position} radius={0.1} smoothness={10}>
-          <meshStandardMaterial color={panel.color} roughness={0.55} />
+          <meshStandardMaterial color={panel.color} emissive={nightMode ? panel.color : "#000000"} emissiveIntensity={nightMode ? 0.58 : 0} roughness={0.55} />
         </RoundedBox>
       ))}
       <RoundedBox args={[1.7, 2.65, 0.2]} position={[4.6, 1.32, -6.64]} radius={0.75} smoothness={18}>
@@ -906,7 +932,14 @@ function PlayLabRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
           <meshStandardMaterial color={palette[index]} roughness={0.46} />
         </RoundedBox>
       ))}
-      <pointLight color="#fff7c2" distance={6} intensity={0.56} position={[1.8, 3.8, 1.2]} />
+      <pointLight color="#fff7c2" distance={6} intensity={nightMode ? 1.05 : 0.56} position={[1.8, 3.8, 1.2]} />
+      {nightMode && (
+        <>
+          <pointLight color="#ef4444" distance={4} intensity={0.5} position={[-4.6, 2.45, -5.6]} />
+          <pointLight color="#2563eb" distance={4} intensity={0.5} position={[-2.9, 2.95, -5.6]} />
+          <pointLight color="#0f9f7a" distance={5} intensity={0.58} position={[0.5, 2.85, -5.6]} />
+        </>
+      )}
     </>
   );
 }

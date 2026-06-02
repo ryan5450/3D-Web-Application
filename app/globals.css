@@ -288,6 +288,10 @@ button:disabled {
   background: #d8e1ea;
 }
 
+.scene-page.night-mode {
+  background: #0f172a;
+}
+
 .scene-toolbar {
   position: fixed;
   z-index: 5;
@@ -348,6 +352,27 @@ button:disabled {
   background: rgba(255, 255, 255, 0.9);
   color: var(--dark);
   font-weight: 800;
+}
+
+.night-toggle {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(216, 224, 234, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--dark);
+  font-weight: 900;
+}
+
+.night-toggle.active {
+  border-color: rgba(147, 197, 253, 0.55);
+  background: linear-gradient(180deg, #1e293b, #111827);
+  color: #f8fafc;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.28);
 }
 
 .canvas-wrap {
