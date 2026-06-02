@@ -1101,14 +1101,14 @@ function DraggableObject({
       position={position}
       rotation={[0, object.rotationY || 0, 0]}
     >
-      <ObjectMesh held={held} hovered={hovered || selected} object={object} selected={selected} />
+      <ObjectMesh held={held} object={object} selected={selected} />
     </group>
   );
 }
 
-function SmoothMaterial({ color, held, hovered }: { color: string; held: boolean; hovered: boolean }) {
+function SmoothMaterial({ color }: { color: string }) {
   return (
-    <meshStandardMaterial color={held ? "#f59e0b" : hovered ? "#0f9f7a" : color} metalness={0.08} roughness={0.42} />
+    <meshStandardMaterial color={color} metalness={0.08} roughness={0.42} />
   );
 }
 
@@ -1122,7 +1122,7 @@ function SelectionRing({ selected }: { selected: boolean }) {
   );
 }
 
-function ObjectMesh({ held, hovered, object, selected }: { held: boolean; hovered: boolean; object: SceneObject; selected: boolean }) {
+function ObjectMesh({ held, object, selected }: { held: boolean; object: SceneObject; selected: boolean }) {
   const scale = object.scale * (held ? 1.08 : 1);
   const color = object.color || "#2563eb";
 
@@ -1132,7 +1132,7 @@ function ObjectMesh({ held, hovered, object, selected }: { held: boolean; hovere
         <SelectionRing selected={selected} />
         <mesh castShadow scale={scale}>
           <sphereGeometry args={[0.62, 48, 32]} />
-          <SmoothMaterial color={color} held={held} hovered={hovered} />
+          <SmoothMaterial color={color} />
         </mesh>
       </group>
     );
@@ -1143,7 +1143,7 @@ function ObjectMesh({ held, hovered, object, selected }: { held: boolean; hovere
         <SelectionRing selected={selected} />
         <mesh castShadow scale={scale}>
           <coneGeometry args={[0.6, 1.18, 48]} />
-          <SmoothMaterial color={color} held={held} hovered={hovered} />
+          <SmoothMaterial color={color} />
         </mesh>
       </group>
     );
@@ -1154,21 +1154,21 @@ function ObjectMesh({ held, hovered, object, selected }: { held: boolean; hovere
         <SelectionRing selected={selected} />
         <mesh castShadow rotation={[Math.PI / 2, 0, 0]} scale={scale}>
           <torusGeometry args={[0.48, 0.16, 32, 96]} />
-          <SmoothMaterial color={color} held={held} hovered={hovered} />
+          <SmoothMaterial color={color} />
         </mesh>
       </group>
     );
   }
-  if (object.kind === "chair") return <Chair color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "sofa") return <Sofa color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "table") return <Table color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "lamp") return <Lamp color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "plant") return <Plant held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "bookshelf") return <Bookshelf color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "rug") return <Rug color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "tv") return <TV held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "bed") return <Bed color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
-  if (object.kind === "cabinet") return <Cabinet color={color} held={held} hovered={hovered} scale={scale} selected={selected} />;
+  if (object.kind === "chair") return <Chair color={color} scale={scale} selected={selected} />;
+  if (object.kind === "sofa") return <Sofa color={color} scale={scale} selected={selected} />;
+  if (object.kind === "table") return <Table color={color} scale={scale} selected={selected} />;
+  if (object.kind === "lamp") return <Lamp color={color} scale={scale} selected={selected} />;
+  if (object.kind === "plant") return <Plant scale={scale} selected={selected} />;
+  if (object.kind === "bookshelf") return <Bookshelf color={color} scale={scale} selected={selected} />;
+  if (object.kind === "rug") return <Rug color={color} selected={selected} />;
+  if (object.kind === "tv") return <TV scale={scale} selected={selected} />;
+  if (object.kind === "bed") return <Bed color={color} scale={scale} selected={selected} />;
+  if (object.kind === "cabinet") return <Cabinet color={color} scale={scale} selected={selected} />;
   if (object.kind === "duck" || object.kind === "customDuck" || object.kind === "customRobot") {
     return <CustomModel held={held} kind={object.kind} scale={scale} selected={selected} />;
   }
@@ -1176,77 +1176,77 @@ function ObjectMesh({ held, hovered, object, selected }: { held: boolean; hovere
     <group>
       <SelectionRing selected={selected} />
       <RoundedBox args={[1, 1, 1]} castShadow radius={0.18} scale={scale} smoothness={16}>
-        <SmoothMaterial color={color} held={held} hovered={hovered} />
+        <SmoothMaterial color={color} />
       </RoundedBox>
     </group>
   );
 }
 
-function Chair({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Chair({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[0.95, 0.16, 0.95]} castShadow position={[0, 0.62, 0]} radius={0.06} smoothness={8}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
-      <RoundedBox args={[0.95, 0.9, 0.16]} castShadow position={[0, 1.04, -0.38]} radius={0.06} smoothness={8}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[0.95, 0.16, 0.95]} castShadow position={[0, 0.62, 0]} radius={0.06} smoothness={8}><SmoothMaterial color={color} /></RoundedBox>
+      <RoundedBox args={[0.95, 0.9, 0.16]} castShadow position={[0, 1.04, -0.38]} radius={0.06} smoothness={8}><SmoothMaterial color={color} /></RoundedBox>
       {[-0.35, 0.35].map((x) => [-0.35, 0.35].map((z) => <RoundedBox key={`${x}-${z}`} args={[0.12, 0.6, 0.12]} castShadow position={[x, 0.3, z]} radius={0.03} smoothness={6}><meshStandardMaterial color="#4b3829" roughness={0.58} /></RoundedBox>))}
     </group>
   );
 }
 
-function Sofa({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Sofa({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[2.55, 0.42, 1.1]} castShadow position={[0, 0.43, 0]} radius={0.14} smoothness={16}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
-      <RoundedBox args={[2.6, 0.9, 0.24]} castShadow position={[0, 0.9, -0.5]} radius={0.12} smoothness={16}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
-      <RoundedBox args={[0.24, 0.72, 1.1]} castShadow position={[-1.42, 0.72, 0]} radius={0.12} smoothness={12}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
-      <RoundedBox args={[0.24, 0.72, 1.1]} castShadow position={[1.42, 0.72, 0]} radius={0.12} smoothness={12}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[2.55, 0.42, 1.1]} castShadow position={[0, 0.43, 0]} radius={0.14} smoothness={16}><SmoothMaterial color={color} /></RoundedBox>
+      <RoundedBox args={[2.6, 0.9, 0.24]} castShadow position={[0, 0.9, -0.5]} radius={0.12} smoothness={16}><SmoothMaterial color={color} /></RoundedBox>
+      <RoundedBox args={[0.24, 0.72, 1.1]} castShadow position={[-1.42, 0.72, 0]} radius={0.12} smoothness={12}><SmoothMaterial color={color} /></RoundedBox>
+      <RoundedBox args={[0.24, 0.72, 1.1]} castShadow position={[1.42, 0.72, 0]} radius={0.12} smoothness={12}><SmoothMaterial color={color} /></RoundedBox>
     </group>
   );
 }
 
-function Table({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Table({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[1.35, 0.16, 0.9]} castShadow position={[0, 0.72, 0]} radius={0.08} smoothness={10}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[1.35, 0.16, 0.9]} castShadow position={[0, 0.72, 0]} radius={0.08} smoothness={10}><SmoothMaterial color={color} /></RoundedBox>
       {[-0.48, 0.48].map((x) => [-0.28, 0.28].map((z) => <RoundedBox key={`${x}-${z}`} args={[0.11, 0.72, 0.11]} castShadow position={[x, 0.36, z]} radius={0.03} smoothness={6}><meshStandardMaterial color="#5f4634" roughness={0.52} /></RoundedBox>))}
     </group>
   );
 }
 
-function Lamp({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Lamp({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <mesh castShadow position={[0, 0.3, 0]}><cylinderGeometry args={[0.12, 0.18, 0.6, 24]} /><SmoothMaterial color={color} held={held} hovered={hovered} /></mesh>
+      <mesh castShadow position={[0, 0.3, 0]}><cylinderGeometry args={[0.12, 0.18, 0.6, 24]} /><SmoothMaterial color={color} /></mesh>
       <mesh castShadow position={[0, 0.88, 0]}><coneGeometry args={[0.42, 0.55, 32]} /><meshStandardMaterial color="#f8e7bd" roughness={0.45} emissive="#f59e0b" emissiveIntensity={0.18} /></mesh>
       <pointLight color="#f8e7bd" intensity={0.55} distance={4} position={[0, 1.1, 0]} />
     </group>
   );
 }
 
-function Plant({ held, hovered, scale, selected }: { held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Plant({ scale, selected }: { scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <mesh castShadow position={[0, 0.22, 0]}><cylinderGeometry args={[0.32, 0.42, 0.44, 24]} /><meshStandardMaterial color={held ? "#f59e0b" : hovered ? "#0f9f7a" : "#374151"} roughness={0.6} /></mesh>
+      <mesh castShadow position={[0, 0.22, 0]}><cylinderGeometry args={[0.32, 0.42, 0.44, 24]} /><meshStandardMaterial color="#374151" roughness={0.6} /></mesh>
       {[0, 1, 2, 3, 4].map((i) => <mesh key={i} castShadow position={[Math.sin(i) * 0.25, 0.78 + i * 0.04, Math.cos(i) * 0.25]} rotation={[0.7, i, 0.4]}><sphereGeometry args={[0.28, 18, 12]} /><meshStandardMaterial color="#15803d" roughness={0.5} /></mesh>)}
     </group>
   );
 }
 
-function Bookshelf({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Bookshelf({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[1.1, 1.75, 0.42]} castShadow position={[0, 0.9, 0]} radius={0.06} smoothness={8}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[1.1, 1.75, 0.42]} castShadow position={[0, 0.9, 0]} radius={0.06} smoothness={8}><SmoothMaterial color={color} /></RoundedBox>
       {[0.45, 0.9, 1.35].map((y) => <RoundedBox key={y} args={[0.95, 0.05, 0.48]} position={[0, y, 0.02]} radius={0.02} smoothness={4}><meshStandardMaterial color="#e5c07b" roughness={0.5} /></RoundedBox>)}
     </group>
   );
 }
 
-function Rug({ color, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Rug({ color, selected }: { color: string; selected: boolean }) {
   return (
     <group>
       <SelectionRing selected={selected} />
@@ -1258,7 +1258,7 @@ function Rug({ color, selected }: { color: string; held: boolean; hovered: boole
   );
 }
 
-function TV({ selected, scale }: { held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function TV({ selected, scale }: { scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
@@ -1269,11 +1269,11 @@ function TV({ selected, scale }: { held: boolean; hovered: boolean; scale: numbe
   );
 }
 
-function Bed({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Bed({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[2.2, 0.42, 1.35]} castShadow position={[0, 0.32, 0]} radius={0.1} smoothness={12}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[2.2, 0.42, 1.35]} castShadow position={[0, 0.32, 0]} radius={0.1} smoothness={12}><SmoothMaterial color={color} /></RoundedBox>
       <RoundedBox args={[2.2, 0.72, 0.18]} castShadow position={[0, 0.7, -0.64]} radius={0.08} smoothness={10}><meshStandardMaterial color="#334155" roughness={0.5} /></RoundedBox>
       <RoundedBox args={[0.58, 0.18, 0.42]} castShadow position={[-0.55, 0.72, -0.28]} radius={0.08} smoothness={10}><meshStandardMaterial color="#f8fafc" roughness={0.7} /></RoundedBox>
       <RoundedBox args={[0.58, 0.18, 0.42]} castShadow position={[0.55, 0.72, -0.28]} radius={0.08} smoothness={10}><meshStandardMaterial color="#f8fafc" roughness={0.7} /></RoundedBox>
@@ -1281,11 +1281,11 @@ function Bed({ color, held, hovered, scale, selected }: { color: string; held: b
   );
 }
 
-function Cabinet({ color, held, hovered, scale, selected }: { color: string; held: boolean; hovered: boolean; scale: number; selected: boolean }) {
+function Cabinet({ color, scale, selected }: { color: string; scale: number; selected: boolean }) {
   return (
     <group scale={scale}>
       <SelectionRing selected={selected} />
-      <RoundedBox args={[1.25, 1.05, 0.72]} castShadow position={[0, 0.55, 0]} radius={0.08} smoothness={10}><SmoothMaterial color={color} held={held} hovered={hovered} /></RoundedBox>
+      <RoundedBox args={[1.25, 1.05, 0.72]} castShadow position={[0, 0.55, 0]} radius={0.08} smoothness={10}><SmoothMaterial color={color} /></RoundedBox>
       <RoundedBox args={[0.05, 0.75, 0.76]} position={[0, 0.57, 0.02]} radius={0.01} smoothness={4}><meshStandardMaterial color="#1f2937" roughness={0.55} /></RoundedBox>
     </group>
   );
