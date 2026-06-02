@@ -134,27 +134,29 @@ export default function AuthPanel({ onAuthenticated }: Props) {
       </section>
 
       <section className="auth-preview" aria-hidden="true">
-        <div className="preview-grid" />
-        <motion.div animate={{ opacity: 1, y: 0 }} className="preview-window" initial={{ opacity: 0, y: 24 }} transition={{ duration: 0.55, ease: "easeOut" }}>
-          <div className="preview-topbar">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="preview-room">
-            <div className="room-wall" />
-            <div className="room-floor" />
-            <div className="room-sofa" />
-            <div className="room-table" />
-            <div className="room-plant" />
-            <div className="room-cube" />
-            <div className="room-sphere" />
-          </div>
-          <motion.div animate={{ y: [0, -6, 0] }} className="preview-card" transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}>
-            <strong>Room saved</strong>
-            <span>Objects, lights, and mood restored after login</span>
+        <div className="preview-stage">
+          <div className="preview-grid" />
+          <motion.div animate={{ opacity: 1, y: 0 }} className="preview-window" initial={{ opacity: 0, y: 24 }} transition={{ duration: 0.55, ease: "easeOut" }}>
+            <div className="preview-topbar">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="preview-room">
+              <div className="room-wall" />
+              <div className="room-floor" />
+              <div className="room-sofa" />
+              <div className="room-table" />
+              <div className="room-plant" />
+              <div className="room-cube" />
+              <div className="room-sphere" />
+            </div>
+            <motion.div animate={{ y: [0, -6, 0] }} className="preview-card" transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}>
+              <strong>Room saved</strong>
+              <span>Objects, lights, and mood restored after login</span>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
     </main>
   );
