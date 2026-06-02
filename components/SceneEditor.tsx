@@ -826,8 +826,6 @@ function LoungeRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey]; 
         <>
           <pointLight color="#f8e7bd" distance={8} intensity={1.15} position={[3.1, 2.75, -4.9]} />
           <pointLight color="#ffe6a3" distance={5} intensity={0.68} position={[-2.2, 2.6, -5.7]} />
-          <FloorLamp position={[-3.95, 0, -4.92]} />
-          <WarmWallSconce position={[-2.2, 2.62, -6.62]} />
         </>
       )}
       <WallFrame position={[-1.8, 2.45, -6.78]} />
@@ -881,7 +879,6 @@ function StudioRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey]; 
         <>
           <pointLight color="#93c5fd" distance={8} intensity={1.1} position={[-2.1, 2.9, -4.8]} />
           <pointLight color="#f8fafc" distance={4.5} intensity={0.62} position={[2.45, 1.8, -5.8]} />
-          <HangingBulb position={[1.3, 3.15, -1.2]} color="#dbeafe" glow="#60a5fa" />
         </>
       )}
     </>
@@ -938,73 +935,9 @@ function PlayLabRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey];
           <pointLight color="#ef4444" distance={4} intensity={0.5} position={[-4.6, 2.45, -5.6]} />
           <pointLight color="#2563eb" distance={4} intensity={0.5} position={[-2.9, 2.95, -5.6]} />
           <pointLight color="#0f9f7a" distance={5} intensity={0.58} position={[0.5, 2.85, -5.6]} />
-          <HangingBulb position={[2.9, 3.0, 1.1]} color="#fff7c2" glow="#f59e0b" playful />
         </>
       )}
     </>
-  );
-}
-
-function FloorLamp({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <mesh castShadow position={[0, 0.08, 0]}>
-        <cylinderGeometry args={[0.32, 0.4, 0.16, 32]} />
-        <meshStandardMaterial color="#2f3746" roughness={0.55} />
-      </mesh>
-      <mesh castShadow position={[0, 0.86, 0]}>
-        <cylinderGeometry args={[0.045, 0.06, 1.65, 24]} />
-        <meshStandardMaterial color="#475569" metalness={0.28} roughness={0.42} />
-      </mesh>
-      <mesh castShadow position={[0, 1.78, 0]}>
-        <coneGeometry args={[0.48, 0.58, 36, 1, true]} />
-        <meshStandardMaterial color="#fff1bd" emissive="#f59e0b" emissiveIntensity={0.85} roughness={0.38} side={THREE.DoubleSide} transparent opacity={0.92} />
-      </mesh>
-      <pointLight color="#ffe7a3" distance={5.8} intensity={0.92} position={[0, 1.62, 0]} />
-    </group>
-  );
-}
-
-function WarmWallSconce({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <RoundedBox args={[0.42, 0.15, 0.08]} radius={0.04} smoothness={8}>
-        <meshStandardMaterial color="#fff4c8" emissive="#f59e0b" emissiveIntensity={1.15} roughness={0.32} />
-      </RoundedBox>
-      <RoundedBox args={[0.52, 0.05, 0.05]} position={[0, -0.16, 0]} radius={0.02} smoothness={4}>
-        <meshStandardMaterial color="#475569" roughness={0.45} />
-      </RoundedBox>
-    </group>
-  );
-}
-
-function HangingBulb({
-  color,
-  glow,
-  playful = false,
-  position
-}: {
-  color: string;
-  glow: string;
-  playful?: boolean;
-  position: [number, number, number];
-}) {
-  return (
-    <group position={position}>
-      <mesh castShadow position={[0, 0.42, 0]}>
-        <cylinderGeometry args={[0.025, 0.025, 0.84, 12]} />
-        <meshStandardMaterial color="#334155" roughness={0.5} />
-      </mesh>
-      <mesh castShadow position={[0, -0.03, 0]}>
-        <sphereGeometry args={[playful ? 0.26 : 0.22, 32, 16]} />
-        <meshStandardMaterial color={color} emissive={glow} emissiveIntensity={1.05} roughness={0.26} transparent opacity={0.92} />
-      </mesh>
-      <mesh position={[0, -0.03, 0]}>
-        <sphereGeometry args={[playful ? 0.42 : 0.34, 32, 16]} />
-        <meshBasicMaterial color={glow} transparent opacity={0.12} depthWrite={false} />
-      </mesh>
-      <pointLight color={color} distance={playful ? 5.5 : 4.8} intensity={playful ? 0.82 : 0.68} position={[0, -0.08, 0]} />
-    </group>
   );
 }
 

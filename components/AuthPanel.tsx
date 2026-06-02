@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LogIn, UserPlus } from "lucide-react";
+import { Box, CheckCircle2, Layers3, LogIn, ShieldCheck, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import type { User } from "@/components/AppShell";
@@ -50,9 +50,14 @@ export default function AuthPanel({ onAuthenticated }: Props) {
           initial={{ opacity: 0, y: 14 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          <span className="eyebrow">Scene Workspace</span>
-          <h1>Design rooms in 3D</h1>
-          <p>Sign in to continue your saved layout, place objects naturally, and refine each room without losing your progress.</p>
+          <span className="eyebrow">3D Scene Workspace</span>
+          <h1>Build and save playful rooms</h1>
+          <p>Sign in to open your private editor, arrange 3D objects, switch room moods, and keep every scene synced to your account.</p>
+          <div className="auth-highlights">
+            <span><CheckCircle2 size={16} /> Saved layouts</span>
+            <span><Layers3 size={16} /> Three room styles</span>
+            <span><ShieldCheck size={16} /> Session protected</span>
+          </div>
         </motion.div>
 
         <motion.form
@@ -62,6 +67,16 @@ export default function AuthPanel({ onAuthenticated }: Props) {
           onSubmit={submit}
           transition={{ duration: 0.38, delay: 0.08, ease: "easeOut" }}
         >
+          <div className="form-heading">
+            <div className="form-icon">
+              <Box size={20} />
+            </div>
+            <div>
+              <strong>{mode === "login" ? "Welcome back" : "Create your workspace"}</strong>
+              <span>{mode === "login" ? "Continue designing from your saved room." : "Start saving your own 3D layouts."}</span>
+            </div>
+          </div>
+
           <div className="mode-switch" aria-label="Authentication mode">
             <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")} type="button">
               Login
@@ -102,7 +117,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
           <div className="auth-actions">
             <button className="primary" disabled={busy} type="submit">
               {mode === "login" ? <LogIn size={18} /> : <UserPlus size={18} />}
-              {busy ? "Working..." : mode === "login" ? "Enter workspace" : "Create workspace"}
+              {busy ? "Working..." : mode === "login" ? "Open editor" : "Create account"}
             </button>
             <button
               className="ghost"
@@ -112,7 +127,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
                 setMode(mode === "login" ? "signup" : "login");
               }}
             >
-              {mode === "login" ? "New here?" : "Already have access?"}
+              {mode === "login" ? "Create account instead" : "Login instead"}
             </button>
           </div>
         </motion.form>
@@ -120,20 +135,26 @@ export default function AuthPanel({ onAuthenticated }: Props) {
 
       <section className="auth-preview" aria-hidden="true">
         <div className="preview-grid" />
-        <motion.div
-          animate={{ rotate: 18, y: [0, -10, 0] }}
-          className="preview-shape shape-a"
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          animate={{ y: [0, 14, 0], scale: [1, 1.05, 1] }}
-          className="preview-shape shape-b"
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <div className="preview-card">
-          <strong>Room 02</strong>
-          <span>12 objects saved</span>
-        </div>
+        <motion.div animate={{ opacity: 1, y: 0 }} className="preview-window" initial={{ opacity: 0, y: 24 }} transition={{ duration: 0.55, ease: "easeOut" }}>
+          <div className="preview-topbar">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="preview-room">
+            <div className="room-wall" />
+            <div className="room-floor" />
+            <div className="room-sofa" />
+            <div className="room-table" />
+            <div className="room-plant" />
+            <div className="room-cube" />
+            <div className="room-sphere" />
+          </div>
+        </motion.div>
+        <motion.div animate={{ y: [0, -8, 0] }} className="preview-card" transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}>
+          <strong>Room saved</strong>
+          <span>Objects, lights, and mood restored after login</span>
+        </motion.div>
       </section>
     </main>
   );
