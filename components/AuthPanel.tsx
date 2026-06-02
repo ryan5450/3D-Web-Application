@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Box, CheckCircle2, Layers3, LogIn, ShieldCheck, UserPlus } from "lucide-react";
+import { Box, CheckCircle2, Layers3, LogIn, Moon, ShieldCheck, Sun, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import type { User } from "@/components/AppShell";
@@ -16,6 +16,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [nightMode, setNightMode] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,8 +43,12 @@ export default function AuthPanel({ onAuthenticated }: Props) {
   }
 
   return (
-    <main className="auth-page">
+    <main className={nightMode ? "auth-page auth-night" : "auth-page"}>
       <section className="auth-panel">
+        <button className={nightMode ? "auth-night-toggle active" : "auth-night-toggle"} type="button" onClick={() => setNightMode((current) => !current)}>
+          {nightMode ? <Sun size={17} /> : <Moon size={17} />}
+          {nightMode ? "Day mode" : "Night mode"}
+        </button>
         <motion.div
           animate={{ opacity: 1, y: 0 }}
           className="auth-copy"

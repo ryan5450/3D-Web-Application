@@ -75,6 +75,7 @@ button:disabled {
 }
 
 .auth-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -438,10 +439,10 @@ button:disabled {
 }
 
 .room-sphere {
-  right: 15%;
-  bottom: 18%;
-  width: 58px;
-  height: 58px;
+  right: 11%;
+  bottom: 24%;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: linear-gradient(145deg, #f2b84b, #d9992f);
 }
@@ -472,6 +473,137 @@ button:disabled {
   font-size: 13px;
   font-weight: 760;
   line-height: 1.45;
+}
+
+.auth-page.auth-night {
+  background:
+    linear-gradient(120deg, rgba(20, 184, 166, 0.11), rgba(96, 165, 250, 0.1)),
+    #0f172a;
+}
+
+.auth-night .auth-panel {
+  background: rgba(15, 23, 42, 0.96);
+  border-right-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 18px 0 70px rgba(0, 0, 0, 0.22);
+}
+
+.auth-night-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(216, 224, 234, 0.9);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--dark);
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.auth-night-toggle.active {
+  border-color: rgba(147, 197, 253, 0.35);
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+}
+
+.auth-night .auth-panel h1,
+.auth-night .form-heading strong,
+.auth-night .preview-card strong {
+  color: #f8fafc;
+}
+
+.auth-night .auth-panel p,
+.auth-night .form-heading span,
+.auth-night .preview-card span {
+  color: #b6c2d2;
+}
+
+.auth-night .auth-highlights span {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.6);
+  color: #cbd5e1;
+}
+
+.auth-night .auth-form {
+  border-color: rgba(148, 163, 184, 0.24);
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.9)),
+    #111827;
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.28);
+}
+
+.auth-night .auth-form label {
+  color: #e2e8f0;
+}
+
+.auth-night .auth-form input {
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+}
+
+.auth-night .mode-switch {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.auth-night .mode-switch button {
+  color: #94a3b8;
+}
+
+.auth-night .mode-switch button.active {
+  background: rgba(51, 65, 85, 0.95);
+  color: #f8fafc;
+}
+
+.auth-night .ghost {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e2e8f0;
+}
+
+.auth-night .auth-preview {
+  background:
+    radial-gradient(circle at 30% 18%, rgba(45, 212, 191, 0.16), transparent 28%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92)),
+    #0f172a;
+}
+
+.auth-night .preview-window {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.74);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.38);
+}
+
+.auth-night .preview-topbar {
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.auth-night .preview-room {
+  background: linear-gradient(180deg, #182235 0%, #111827 100%);
+}
+
+.auth-night .room-wall {
+  background:
+    linear-gradient(90deg, rgba(96, 165, 250, 0.12), transparent 40%),
+    #1f2937;
+}
+
+.auth-night .room-floor {
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    #1e293b;
+}
+
+.auth-night .preview-card {
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(15, 23, 42, 0.78);
 }
 
 .scene-page {
