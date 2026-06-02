@@ -225,10 +225,6 @@ function computeRestY(object: SceneObject, objects: SceneObject[]) {
   return Number(restY.toFixed(2));
 }
 
-function supportYFor(object: SceneObject, objects: SceneObject[]) {
-  return computeRestY({ ...object, targetY: undefined }, objects);
-}
-
 function objectScale(kind: ObjectKind) {
   if (kind === "customDuck" || kind === "customRobot") return 0.018;
   if (kind === "rug") return 1.25;
@@ -326,7 +322,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
   const [dragging, setDragging] = useState(false);
   const [selectedKind, setSelectedKind] = useState<ObjectKind>("cube");
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
-  const [heldObjectId, setHeldObjectId] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("cozy");
   const [sceneSlot, setSceneSlot] = useState("room-1");
   const [status, setStatus] = useState("Loading scene...");
@@ -338,34 +333,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneSlot]);
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!selectedObjectId || dialogOpen) return;
-      const key = event.key.toLowerCase();
-      const actions: Record<string, () => void> = {
-        arrowleft: () => nudgeSelected("x", -0.5),
-        a: () => nudgeSelected("x", -0.5),
-        arrowright: () => nudgeSelected("x", 0.5),
-        d: () => nudgeSelected("x", 0.5),
-        arrowup: () => nudgeSelected("z", -0.5),
-        w: () => nudgeSelected("z", -0.5),
-        arrowdown: () => nudgeSelected("z", 0.5),
-        s: () => nudgeSelected("z", 0.5),
-        q: () => nudgeSelected("y", 0.5),
-        e: () => nudgeSelected("y", -0.5),
-        " ": dropSelected
-      };
-
-      if (actions[key]) {
-        event.preventDefault();
-        actions[key]();
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedObjectId, selectedObject, dialogOpen]);
-
   async function loadScene(slot: string) {
     setStatus("Loading scene...");
     const response = await fetch(`/api/scene?slot=${slot}`);
@@ -376,12 +343,10 @@ export default function SceneEditor({ user, onLogout }: Props) {
       setObjects(loadedObjects.length ? loadedObjects : starter.objects);
       setTheme(loadedObjects.length ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
       setSelectedObjectId(null);
-      setHeldObjectId(null);
       setStatus(loadedObjects.length ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     } else {
       setObjects(starter.objects);
       setTheme(starter.theme);
-      setHeldObjectId(null);
       setStatus(`${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     }
   }
@@ -399,7 +364,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
         targetY: drop.targetY
       };
       setSelectedObjectId(created.id);
-      setHeldObjectId(created.id);
       return [...current, created];
     });
     setStatus(`${objectLabels[kind]} added`);
@@ -410,11 +374,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setObjects((current) =>
       current.map((object) => (object.id === id ? cleanObject({ ...object, ...patch }) : object))
     );
-  }
-
-  function selectObject(id: string) {
-    setSelectedObjectId(id);
-    setHeldObjectId(id);
   }
 
   function updateObjectPosition(id: string, nextPosition: THREE.Vector3, targetY?: number) {
@@ -451,14 +410,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
     };
     setObjects((current) => [...current, copy]);
     setSelectedObjectId(copy.id);
-    setHeldObjectId(copy.id);
   }
 
   function deleteSelected() {
     if (!selectedObject) return;
     setObjects((current) => current.filter((object) => object.id !== selectedObject.id));
     setSelectedObjectId(null);
-    setHeldObjectId(null);
   }
 
   function snapSelected() {
@@ -472,36 +429,9 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setStatus(`Snapped to ${zone.label}`);
   }
 
-  function nudgeSelected(axis: "x" | "y" | "z", amount: number) {
-    if (!selectedObject) return;
-    const position = { ...selectedObject.position };
-    position[axis] =
-      axis === "y"
-        ? Math.max(0, Math.min(6, Number((position[axis] + amount).toFixed(2))))
-        : clampRoom(Number((position[axis] + amount).toFixed(2)));
-
-    setHeldObjectId(selectedObject.id);
-    updateObject(selectedObject.id, { position, targetY: position.y });
-  }
-
-  function dropSelected() {
-    if (!selectedObject) return;
-    const restY = supportYFor(selectedObject, objects);
-    setHeldObjectId(null);
-    updateObject(selectedObject.id, { targetY: restY });
-    setStatus("Dropped to nearest valid support");
-  }
-
   async function saveScene() {
     setStatus("Saving...");
-    const settledObjects = objects.map((object) => ({
-      ...object,
-      position: {
-        ...object.position,
-        y: supportYFor(object, objects)
-      }
-    }));
-    const savedObjects = settledObjects.map(({ targetY, ...object }) => cleanObject(object));
+    const savedObjects = objects.map(({ targetY, ...object }) => cleanObject(object));
     const response = await fetch("/api/scene", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -520,7 +450,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setObjects(starter.objects);
     setTheme(starter.theme);
     setSelectedObjectId(null);
-    setHeldObjectId(null);
     setStatus(`${sceneSlots.find((item) => item.value === sceneSlot)?.label || "Room"} reset`);
   }
 
@@ -589,8 +518,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
               theme={theme}
               onDragChange={setDragging}
               onMove={updateObjectPosition}
-              onSelect={selectObject}
-              heldObjectId={heldObjectId}
+              onSelect={setSelectedObjectId}
             />
             <Environment preset="apartment" />
           </Suspense>
@@ -627,7 +555,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
               />
             </label>
             <label className="control-row">
-              Build Height
+              Height
               <input
                 max="5.5"
                 min="0"
@@ -635,18 +563,13 @@ export default function SceneEditor({ user, onLogout }: Props) {
                 type="range"
                 value={selectedObject.position.y}
                 onChange={(event) =>
-                  nudgeSelected("y", Number(event.target.value) - selectedObject.position.y)
+                  updateObject(selectedObject.id, {
+                    position: { ...selectedObject.position, y: Number(event.target.value) },
+                    targetY: undefined
+                  })
                 }
               />
             </label>
-            <div className="move-pad">
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("z", -0.5)}>Forward</button>
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("x", -0.5)}>Left</button>
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("y", 0.5)}>Up</button>
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("x", 0.5)}>Right</button>
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("z", 0.5)}>Back</button>
-              <button className="tool-button" type="button" onClick={() => nudgeSelected("y", -0.5)}>Down</button>
-            </div>
             <label className="control-row">
               Rotate
               <input
@@ -659,7 +582,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
               />
             </label>
             <div className="tool-grid">
-              <button className="tool-button" type="button" onClick={dropSelected}>Drop</button>
               <button className="tool-button" type="button" onClick={snapSelected}>Snap</button>
               <button className="tool-button" type="button" onClick={() => updateObject(selectedObject.id, { rotationY: 0 })}>
                 <RotateCcw size={16} />
@@ -710,7 +632,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
 function SceneRoom({
   objects,
   selectedObjectId,
-  heldObjectId,
   theme,
   onDragChange,
   onMove,
@@ -718,7 +639,6 @@ function SceneRoom({
 }: {
   objects: SceneObject[];
   selectedObjectId: string | null;
-  heldObjectId: string | null;
   theme: ThemeKey;
   onDragChange: (dragging: boolean) => void;
   onMove: (id: string, position: THREE.Vector3, targetY?: number) => void;
@@ -733,7 +653,6 @@ function SceneRoom({
           allObjects={objects}
           object={object}
           selected={object.id === selectedObjectId}
-          activelyHeld={object.id === heldObjectId}
           onDragChange={onDragChange}
           onMove={onMove}
           onSelect={onSelect}
@@ -783,7 +702,6 @@ function DraggableObject({
   object,
   allObjects,
   selected,
-  activelyHeld,
   onDragChange,
   onMove,
   onSelect
@@ -791,7 +709,6 @@ function DraggableObject({
   object: SceneObject;
   allObjects: SceneObject[];
   selected: boolean;
-  activelyHeld: boolean;
   onDragChange: (dragging: boolean) => void;
   onMove: (id: string, position: THREE.Vector3, targetY?: number) => void;
   onSelect: (id: string) => void;
@@ -803,7 +720,7 @@ function DraggableObject({
   useCursor(hovered);
 
   useFrame((_, delta) => {
-    const targetY = activelyHeld ? object.position.y : computeRestY(object, allObjects);
+    const targetY = computeRestY(object, allObjects);
     if (!held && Math.abs(object.position.y - targetY) >= 0.025) {
       const smoothing = 1 - Math.pow(0.0006, delta);
       const nextY = THREE.MathUtils.lerp(object.position.y, targetY, smoothing);
@@ -817,7 +734,7 @@ function DraggableObject({
     const point = event.ray.intersectPlane(dragPlane, new THREE.Vector3());
     if (!point) return;
     point.y = object.position.y;
-    onMove(object.id, point, point.y);
+    onMove(object.id, point, object.targetY);
   }
 
   return (

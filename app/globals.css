@@ -353,13 +353,7 @@ button {
 
 .tool-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 42px 42px 42px;
-  gap: 8px;
-}
-
-.move-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 42px 42px 42px;
   gap: 8px;
 }
 
