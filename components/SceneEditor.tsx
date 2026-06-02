@@ -151,9 +151,9 @@ const themes: Record<ThemeKey, { label: string; floor: string; wall: string; sid
 
 const palette = ["#2563eb", "#0f9f7a", "#f59e0b", "#ef4444", "#8b5cf6", "#475569", "#8b6f52"];
 const sceneSlots = [
-  { value: "room-1", label: "Room 1" },
-  { value: "room-2", label: "Room 2" },
-  { value: "room-3", label: "Room 3" }
+  { value: "room-1", label: "Lounge" },
+  { value: "room-2", label: "Studio" },
+  { value: "room-3", label: "Play Lab" }
 ];
 const snapZones = [
   { id: "sofa-wall", label: "Wall", position: { x: -2.1, y: 0, z: -2.45 } },
@@ -653,6 +653,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
           <Suspense fallback={<Html center>Loading 3D scene...</Html>}>
             <SceneRoom
               objects={objects}
+              sceneSlot={sceneSlot}
               selectedObjectId={selectedObjectId}
               theme={theme}
               onDragChange={setDragging}
@@ -738,6 +739,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
 function SceneRoom({
   objects,
+  sceneSlot,
   selectedObjectId,
   theme,
   onDragChange,
@@ -745,6 +747,7 @@ function SceneRoom({
   onSelect
 }: {
   objects: SceneObject[];
+  sceneSlot: string;
   selectedObjectId: string | null;
   theme: ThemeKey;
   onDragChange: (dragging: boolean) => void;
@@ -753,7 +756,7 @@ function SceneRoom({
 }) {
   return (
     <>
-      <RoomShell theme={theme} />
+      <RoomShell sceneSlot={sceneSlot} theme={theme} />
       {objects.map((object) => (
         <DraggableObject
           key={object.id}
@@ -769,8 +772,14 @@ function SceneRoom({
   );
 }
 
-function RoomShell({ theme }: { theme: ThemeKey }) {
+function RoomShell({ sceneSlot, theme }: { sceneSlot: string; theme: ThemeKey }) {
   const colors = themes[theme];
+  if (sceneSlot === "room-2") return <StudioRoom colors={colors} />;
+  if (sceneSlot === "room-3") return <PlayLabRoom colors={colors} />;
+  return <LoungeRoom colors={colors} />;
+}
+
+function LoungeRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
   return (
     <>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
@@ -786,8 +795,118 @@ function RoomShell({ theme }: { theme: ThemeKey }) {
         <boxGeometry args={[0.16, 4.5, 14]} />
         <meshStandardMaterial color={colors.side} roughness={0.84} />
       </mesh>
+      {[-4.4, -3.8, -3.2].map((x) => (
+        <RoundedBox key={x} args={[0.08, 4.2, 0.1]} position={[x, 2.1, -6.72]} radius={0.02} smoothness={4}>
+          <meshStandardMaterial color="#9a7b5f" roughness={0.62} />
+        </RoundedBox>
+      ))}
+      <RoundedBox args={[2.4, 1.28, 0.08]} position={[3.1, 2.75, -6.73]} radius={0.04} smoothness={8}>
+        <meshStandardMaterial color="#dbeafe" roughness={0.22} metalness={0.08} />
+      </RoundedBox>
+      <RoundedBox args={[2.62, 1.46, 0.05]} position={[3.1, 2.75, -6.78]} radius={0.04} smoothness={8}>
+        <meshStandardMaterial color="#344054" roughness={0.45} />
+      </RoundedBox>
+      <mesh castShadow position={[0.4, 3.85, -1.6]}>
+        <sphereGeometry args={[0.32, 32, 16]} />
+        <meshStandardMaterial color="#f8e7bd" emissive="#d9992f" emissiveIntensity={0.28} roughness={0.4} />
+      </mesh>
+      <pointLight color="#f8e7bd" distance={7} intensity={0.68} position={[0.4, 3.55, -1.6]} />
       <WallFrame position={[-1.8, 2.45, -6.78]} />
       <WallFrame position={[1.05, 2.9, -6.78]} tall />
+    </>
+  );
+}
+
+function StudioRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
+  return (
+    <>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <planeGeometry args={[14, 14]} />
+        <meshStandardMaterial color={colors.floor} roughness={0.92} />
+      </mesh>
+      <Grid args={[14, 14]} cellColor="#b8c2cf" cellSize={0.5} fadeDistance={18} fadeStrength={1.2} position={[0, 0.012, 0]} sectionColor="#64748b" sectionSize={2} />
+      <mesh receiveShadow position={[0, 2.45, -6.9]}>
+        <boxGeometry args={[14, 4.9, 0.16]} />
+        <meshStandardMaterial color="#cfd6df" roughness={0.9} />
+      </mesh>
+      <mesh receiveShadow position={[6.9, 2.45, 0]}>
+        <boxGeometry args={[0.16, 4.9, 14]} />
+        <meshStandardMaterial color="#dde3ea" roughness={0.88} />
+      </mesh>
+      <RoundedBox args={[5.6, 2.55, 0.08]} position={[-2.1, 2.7, -6.74]} radius={0.03} smoothness={8}>
+        <meshStandardMaterial color="#1f2937" roughness={0.42} />
+      </RoundedBox>
+      {[-3.65, -2.1, -0.55].map((x) => (
+        <RoundedBox key={x} args={[1.35, 2.22, 0.09]} position={[x, 2.7, -6.68]} radius={0.025} smoothness={8}>
+          <meshStandardMaterial color="#bfdbfe" roughness={0.16} metalness={0.08} transparent opacity={0.72} />
+        </RoundedBox>
+      ))}
+      <RoundedBox args={[3.4, 0.18, 2.1]} position={[2.65, 0.1, 2.0]} radius={0.06} smoothness={8}>
+        <meshStandardMaterial color="#a9b4c1" roughness={0.82} />
+      </RoundedBox>
+      <RoundedBox args={[1.4, 0.12, 0.58]} position={[0.2, 0.08, 2.0]} radius={0.04} smoothness={6}>
+        <meshStandardMaterial color="#b9c2cf" roughness={0.82} />
+      </RoundedBox>
+      {[1.75, 2.45, 3.15].map((x) => (
+        <RoundedBox key={x} args={[1.05, 0.08, 0.32]} position={[x, 1.45, -6.62]} radius={0.025} smoothness={4}>
+          <meshStandardMaterial color="#334155" roughness={0.5} />
+        </RoundedBox>
+      ))}
+      {[1.75, 2.45, 3.15].map((x, index) => (
+        <RoundedBox key={`${x}-book`} args={[0.18, 0.32 + index * 0.08, 0.18]} position={[x - 0.28, 1.67 + index * 0.04, -6.42]} radius={0.015} smoothness={4}>
+          <meshStandardMaterial color={palette[index + 1]} roughness={0.55} />
+        </RoundedBox>
+      ))}
+      <directionalLight castShadow color="#dbeafe" intensity={0.55} position={[-3, 5, 2]} />
+    </>
+  );
+}
+
+function PlayLabRoom({ colors }: { colors: (typeof themes)[ThemeKey] }) {
+  return (
+    <>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <planeGeometry args={[14, 14]} />
+        <meshStandardMaterial color="#d7f0de" roughness={0.88} />
+      </mesh>
+      {[-4.5, -1.5, 1.5, 4.5].map((x, rowIndex) =>
+        [-4.5, -1.5, 1.5, 4.5].map((z, columnIndex) => (
+          <mesh key={`${x}-${z}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, -0.025, z]}>
+            <planeGeometry args={[2.8, 2.8]} />
+            <meshStandardMaterial color={(rowIndex + columnIndex) % 2 === 0 ? "#bfe3d0" : "#f8d7a7"} roughness={0.86} />
+          </mesh>
+        ))
+      )}
+      <mesh receiveShadow position={[0, 1.95, -6.9]}>
+        <boxGeometry args={[14, 3.9, 0.16]} />
+        <meshStandardMaterial color={colors.wall} roughness={0.78} />
+      </mesh>
+      <mesh receiveShadow position={[-6.9, 1.95, 0]}>
+        <boxGeometry args={[0.16, 3.9, 14]} />
+        <meshStandardMaterial color={colors.side} roughness={0.78} />
+      </mesh>
+      {[
+        { color: "#ef4444", position: [-4.6, 2.45, -6.72] as [number, number, number] },
+        { color: "#2563eb", position: [-2.9, 2.95, -6.72] as [number, number, number] },
+        { color: "#f59e0b", position: [-1.2, 2.35, -6.72] as [number, number, number] },
+        { color: "#0f9f7a", position: [0.5, 2.85, -6.72] as [number, number, number] }
+      ].map((panel) => (
+        <RoundedBox key={panel.color} args={[1.05, 1.05, 0.08]} position={panel.position} radius={0.1} smoothness={10}>
+          <meshStandardMaterial color={panel.color} roughness={0.55} />
+        </RoundedBox>
+      ))}
+      <RoundedBox args={[1.7, 2.65, 0.2]} position={[4.6, 1.32, -6.64]} radius={0.75} smoothness={18}>
+        <meshStandardMaterial color="#f8fafc" roughness={0.66} />
+      </RoundedBox>
+      <RoundedBox args={[1.05, 2.1, 0.24]} position={[4.6, 1.05, -6.5]} radius={0.52} smoothness={18}>
+        <meshStandardMaterial color="#93c5fd" roughness={0.5} />
+      </RoundedBox>
+      {[[-4.9, 0.42, 3.8], [-3.95, 0.74, 3.8], [-3.0, 1.08, 3.8]].map((position, index) => (
+        <RoundedBox key={position.join("-")} args={[0.82, 0.82, 0.82]} position={position as [number, number, number]} radius={0.14} smoothness={12}>
+          <meshStandardMaterial color={palette[index]} roughness={0.46} />
+        </RoundedBox>
+      ))}
+      <pointLight color="#fff7c2" distance={6} intensity={0.56} position={[1.8, 3.8, 1.2]} />
     </>
   );
 }
