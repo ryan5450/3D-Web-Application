@@ -64,9 +64,11 @@ button:disabled {
 }
 
 .auth-page {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 720px;
   display: grid;
   grid-template-columns: minmax(400px, 500px) 1fr;
+  overflow: hidden;
   background:
     linear-gradient(120deg, rgba(8, 127, 111, 0.07), rgba(47, 95, 159, 0.08)),
     #f2f5f8;
@@ -293,15 +295,15 @@ button:disabled {
     linear-gradient(rgba(16, 24, 40, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(16, 24, 40, 0.08) 1px, transparent 1px);
   background-size: 52px 52px;
-  transform: perspective(600px) rotateX(58deg) translateY(80px);
+  transform: perspective(600px) rotateX(58deg) translateY(42px);
   transform-origin: center bottom;
 }
 
 .preview-window {
   position: absolute;
   left: 50%;
-  top: 49%;
-  width: min(620px, 76%);
+  top: 48%;
+  width: min(560px, 70%);
   aspect-ratio: 1.18;
   transform: translate(-50%, -50%);
   overflow: hidden;
@@ -441,10 +443,10 @@ button:disabled {
 
 .preview-card {
   position: absolute;
-  right: 10%;
-  top: 50%;
-  width: 240px;
-  transform: translateY(-50%);
+  right: 16%;
+  top: 33%;
+  width: min(230px, 26vw);
+  transform: none;
   display: grid;
   gap: 6px;
   padding: 16px;
@@ -777,7 +779,9 @@ button:disabled {
 
 @media (max-width: 800px) {
   .auth-page {
+    height: auto;
     grid-template-columns: 1fr;
+    overflow: auto;
   }
 
   .auth-panel {
