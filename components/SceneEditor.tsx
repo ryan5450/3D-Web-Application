@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
-import { Environment, Grid, Html, OrbitControls, useCursor, useGLTF, useTexture } from "@react-three/drei";
+import { Html, useCursor, useGLTF, useTexture } from "@react-three/drei";
 import { LogOut, Plus, Save } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
@@ -14,7 +14,7 @@ type SceneObject = {
   kind: ObjectKind;
   position: { x: number; y: number; z: number };
   scale: number;
-  velocityY?: number;
+  targetY?: number;
 };
 
 const objectLabels: Record<ObjectKind, string> = {
@@ -26,6 +26,8 @@ const objectLabels: Record<ObjectKind, string> = {
   customDuck: "Custom model 1",
   customRobot: "Custom model 2"
 };
+
+const objectOptions: ObjectKind[] = ["cube", "sphere", "cone", "torus", "customDuck", "customRobot"];
 
 const modelUrls: Partial<Record<ObjectKind, string>> = {
   duck: "/models/custom-duck.glb",
@@ -39,7 +41,11 @@ type Props = {
 };
 
 function groundY(kind: ObjectKind) {
-  return kind === "duck" || kind === "customDuck" || kind === "customRobot" ? 0.12 : 0.55;
+  if (kind === "duck" || kind === "customDuck" || kind === "customRobot") {
+    return -2.7;
+  }
+
+  return -2.45;
 }
 
 function dropPosition(index: number, kind: ObjectKind) {
@@ -50,8 +56,9 @@ function dropPosition(index: number, kind: ObjectKind) {
 
   return {
     x: Number(((column - 1.5) * spacing).toFixed(2)),
-    y: 5.5,
-    z: Number((1.5 - row * spacing).toFixed(2))
+    y: 4.4,
+    targetY: Number((groundY(kind) + row * 0.08).toFixed(2)),
+    z: Number((row * 0.08).toFixed(2))
   };
 }
 
@@ -71,8 +78,12 @@ function objectRadius(kind: ObjectKind) {
   return 0.78;
 }
 
-function clampToRoom(value: number) {
-  return Math.max(-5.8, Math.min(5.8, value));
+function clampX(value: number) {
+  return Math.max(-6, Math.min(6, value));
+}
+
+function clampY(value: number) {
+  return Math.max(-2.85, Math.min(3.15, value));
 }
 
 function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
@@ -85,8 +96,8 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
         const b = next[j];
         const minDistance = objectRadius(a.kind) + objectRadius(b.kind);
         const dx = b.position.x - a.position.x;
-        const dz = b.position.z - a.position.z;
-        const distance = Math.hypot(dx, dz) || 0.001;
+        const dy = b.position.y - a.position.y;
+        const distance = Math.hypot(dx, dy) || 0.001;
 
         if (distance >= minDistance) {
           continue;
@@ -94,24 +105,16 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
 
         const overlap = minDistance - distance;
         const directionX = dx / distance;
-        const directionZ = dz / distance;
+        const directionY = dy / distance;
         const activeA = a.id === activeId;
         const activeB = b.id === activeId;
         const moveA = activeB ? overlap : activeA ? 0 : overlap * 0.5;
         const moveB = activeA ? overlap : activeB ? 0 : overlap * 0.5;
 
-        a.position.x = clampToRoom(a.position.x - directionX * moveA);
-        a.position.z = clampToRoom(a.position.z - directionZ * moveA);
-        b.position.x = clampToRoom(b.position.x + directionX * moveB);
-        b.position.z = clampToRoom(b.position.z + directionZ * moveB);
-
-        if (!activeA) {
-          a.velocityY = 0;
-        }
-
-        if (!activeB) {
-          b.velocityY = 0;
-        }
+        a.position.x = clampX(a.position.x - directionX * moveA);
+        a.position.y = clampY(a.position.y - directionY * moveA);
+        b.position.x = clampX(b.position.x + directionX * moveB);
+        b.position.y = clampY(b.position.y + directionY * moveB);
       }
     }
   }
@@ -129,7 +132,6 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
 export default function SceneEditor({ user, onLogout }: Props) {
   const [objects, setObjects] = useState<SceneObject[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dragging, setDragging] = useState(false);
   const [selectedKind, setSelectedKind] = useState<ObjectKind>("cube");
   const [status, setStatus] = useState("Loading scene...");
 
@@ -159,7 +161,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
           kind: selectedKind,
           position: { x: drop.x, y: drop.y, z: drop.z },
           scale: selectedKind === "customDuck" || selectedKind === "customRobot" ? 0.018 : 1,
-          velocityY: 0
+          targetY: drop.targetY
         }
       ];
     });
@@ -167,7 +169,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setDialogOpen(false);
   }
 
-  function updateObjectPosition(id: string, nextPosition: THREE.Vector3, velocityY?: number) {
+  function updateObjectPosition(id: string, nextPosition: THREE.Vector3, targetY?: number) {
     setObjects((current) =>
       resolveObjectCollisions(
         current.map((object) =>
@@ -175,11 +177,11 @@ export default function SceneEditor({ user, onLogout }: Props) {
             ? {
                 ...object,
                 position: {
-                  x: Number(clampToRoom(nextPosition.x).toFixed(2)),
-                  y: Number(nextPosition.y.toFixed(2)),
-                  z: Number(clampToRoom(nextPosition.z).toFixed(2))
+                  x: Number(clampX(nextPosition.x).toFixed(2)),
+                  y: Number(clampY(nextPosition.y).toFixed(2)),
+                  z: Number(nextPosition.z.toFixed(2))
                 },
-                velocityY
+                targetY
               }
             : object
         ),
@@ -190,12 +192,9 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
   async function saveScene() {
     setStatus("Saving...");
-    const savedObjects = objects.map(({ velocityY, ...object }) => ({
+    const savedObjects = objects.map(({ targetY, ...object }) => ({
       ...object,
-      position: {
-        ...object.position,
-        y: groundY(object.kind)
-      }
+      position: object.position
     }));
 
     const response = await fetch("/api/scene", {
@@ -236,15 +235,17 @@ export default function SceneEditor({ user, onLogout }: Props) {
       </div>
 
       <div className="canvas-wrap">
-        <Canvas camera={{ position: [6, 6, 8], fov: 45 }} shadows={{ type: THREE.PCFShadowMap }}>
-          <color attach="background" args={["#d7e1eb"]} />
-          <ambientLight intensity={0.65} />
-          <directionalLight castShadow intensity={1.35} position={[5, 8, 5]} />
+        <Canvas
+          camera={{ position: [0, 0, 10], zoom: 78 }}
+          orthographic
+          shadows={{ type: THREE.PCFShadowMap }}
+        >
+          <color attach="background" args={["#171717"]} />
+          <ambientLight intensity={1.45} />
+          <directionalLight castShadow intensity={1.1} position={[2, 4, 7]} />
           <Suspense fallback={<Html center>Loading 3D scene...</Html>}>
-            <SceneRoom objects={objects} onDragChange={setDragging} onMove={updateObjectPosition} />
-            <Environment preset="city" />
+            <SceneRoom objects={objects} onMove={updateObjectPosition} />
           </Suspense>
-          <OrbitControls makeDefault enableDamping enabled={!dragging} />
         </Canvas>
       </div>
 
@@ -253,7 +254,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
           <div className="dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <h2>Add Object</h2>
             <div className="object-options">
-              {(["cube", "sphere", "customDuck", "customRobot"] as ObjectKind[]).map((kind) => (
+              {objectOptions.map((kind) => (
                 <label key={kind}>
                   <input
                     checked={selectedKind === kind}
@@ -282,36 +283,16 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
 function SceneRoom({
   objects,
-  onDragChange,
   onMove
 }: {
   objects: SceneObject[];
-  onDragChange: (dragging: boolean) => void;
-  onMove: (id: string, position: THREE.Vector3, velocityY?: number) => void;
+  onMove: (id: string, position: THREE.Vector3, targetY?: number) => void;
 }) {
   return (
     <>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-        <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color="#4b4a47" roughness={0.78} />
-      </mesh>
-      <Grid
-        args={[14, 14]}
-        cellColor="#9aa8b8"
-        cellSize={1}
-        fadeDistance={24}
-        fadeStrength={1}
-        position={[0, 0.01, 0]}
-        sectionColor="#667085"
-        sectionSize={2}
-      />
       <LivingRoomBackdrop />
-      <mesh position={[-7, 2, 0]} receiveShadow>
-        <boxGeometry args={[0.16, 4, 14]} />
-        <meshStandardMaterial color="#2d2b29" roughness={0.75} />
-      </mesh>
       {objects.map((object) => (
-        <DraggableObject key={object.id} object={object} onDragChange={onDragChange} onMove={onMove} />
+        <DraggableObject key={object.id} object={object} onMove={onMove} />
       ))}
     </>
   );
@@ -319,33 +300,28 @@ function SceneRoom({
 
 function DraggableObject({
   object,
-  onDragChange,
   onMove
 }: {
   object: SceneObject;
-  onDragChange: (dragging: boolean) => void;
-  onMove: (id: string, position: THREE.Vector3, velocityY?: number) => void;
+  onMove: (id: string, position: THREE.Vector3, targetY?: number) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [held, setHeld] = useState(false);
   const position = useMemo(() => toVector(object.position), [object.position]);
-  const dragPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
+  const dragPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []);
 
   useCursor(hovered);
 
   useFrame((_, delta) => {
-    if (held || object.position.y <= groundY(object.kind)) {
+    const targetY = object.targetY ?? object.position.y;
+
+    if (held || Math.abs(object.position.y - targetY) < 0.03) {
       return;
     }
 
-    const nextVelocity = (object.velocityY ?? 0) - 18 * delta;
-    const nextY = Math.max(groundY(object.kind), object.position.y + nextVelocity * delta);
-    const settleBounce = nextY === groundY(object.kind) && Math.abs(nextVelocity) > 5 ? 1.25 : 0;
-    onMove(
-      object.id,
-      new THREE.Vector3(object.position.x, nextY + settleBounce, object.position.z),
-      settleBounce ? -nextVelocity * 0.18 : nextY === groundY(object.kind) ? 0 : nextVelocity
-    );
+    const smoothing = 1 - Math.pow(0.001, delta);
+    const nextY = THREE.MathUtils.lerp(object.position.y, targetY, smoothing);
+    onMove(object.id, new THREE.Vector3(object.position.x, nextY, object.position.z), targetY);
   });
 
   function drag(event: ThreeEvent<PointerEvent>) {
@@ -360,8 +336,7 @@ function DraggableObject({
       return;
     }
 
-    point.y = groundY(object.kind);
-    onMove(object.id, point, 0);
+    onMove(object.id, new THREE.Vector3(point.x, point.y, object.position.z), point.y);
   }
 
   return (
@@ -370,7 +345,6 @@ function DraggableObject({
         event.stopPropagation();
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         setHeld(true);
-        onDragChange(true);
       }}
       onPointerMove={drag}
       onPointerOver={(event) => {
@@ -382,7 +356,6 @@ function DraggableObject({
         event.stopPropagation();
         (event.target as HTMLElement).releasePointerCapture(event.pointerId);
         setHeld(false);
-        onDragChange(false);
       }}
       position={position}
     >
@@ -447,8 +420,8 @@ function LivingRoomBackdrop() {
   texture.colorSpace = THREE.SRGBColorSpace;
 
   return (
-    <mesh position={[0, 2.35, -6.95]} receiveShadow>
-      <planeGeometry args={[14, 7.85]} />
+    <mesh position={[0, 0, -1]} receiveShadow>
+      <planeGeometry args={[13.8, 7.76]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
   );
@@ -458,11 +431,13 @@ function CustomModel({ held, kind, scale }: { held: boolean; kind: ObjectKind; s
   const gltf = useGLTF(modelUrls[kind] || modelUrls.customDuck!);
 
   return (
-    <primitive
-      object={gltf.scene.clone()}
-      rotation={[0, Math.PI / 4, 0]}
-      scale={scale * 38 * (held ? 1.08 : 1)}
-    />
+    <group scale={scale * 38 * (held ? 1.08 : 1)}>
+      <mesh>
+        <sphereGeometry args={[1.2, 12, 8]} />
+        <meshBasicMaterial depthWrite={false} opacity={0} transparent />
+      </mesh>
+      <primitive object={gltf.scene.clone()} rotation={[0, Math.PI / 8, 0]} />
+    </group>
   );
 }
 
