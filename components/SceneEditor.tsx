@@ -444,6 +444,35 @@ export default function SceneEditor({ user, onLogout }: Props) {
     );
   }
 
+  function resizeObject(id: string, scale: number) {
+    setObjects((current) => {
+      const resized = current.map((object) =>
+        object.id === id
+          ? cleanObject({
+              ...object,
+              scale,
+              position: {
+                ...object.position,
+                y: centerOffset(object.kind, scale)
+              }
+            })
+          : object
+      );
+      const settled = resized.map((object) =>
+        object.id === id
+          ? {
+              ...object,
+              position: {
+                ...object.position,
+                y: computeRestY(object, resized)
+              }
+            }
+          : object
+      );
+      return resolveObjectCollisions(settled, id);
+    });
+  }
+
   function updateObjectPosition(id: string, nextPosition: THREE.Vector3, targetY?: number) {
     setObjects((current) =>
       resolveObjectCollisions(
@@ -703,12 +732,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
             <label className="control-row">
               Size
               <input
-                max="2.2"
+                max="2"
                 min="0.45"
-                step="0.05"
+                step="0.02"
                 type="range"
                 value={selectedObject.scale}
-                onChange={(event) => updateObject(selectedObject.id, { scale: Number(event.target.value) })}
+                onChange={(event) => resizeObject(selectedObject.id, Number(event.target.value))}
               />
             </label>
             <label className="control-row">
@@ -978,7 +1007,7 @@ function DraggableObject({
   useFrame((_, delta) => {
     const targetY = computeRestY(object, allObjects);
     if (!held && Math.abs(object.position.y - targetY) >= 0.025) {
-      const smoothing = 1 - Math.pow(0.0006, delta);
+      const smoothing = 1 - Math.pow(0.025, delta);
       const nextY = THREE.MathUtils.lerp(object.position.y, targetY, smoothing);
       onMove(object.id, new THREE.Vector3(object.position.x, nextY, object.position.z), targetY);
     }

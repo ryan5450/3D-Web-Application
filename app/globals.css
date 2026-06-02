@@ -300,7 +300,7 @@ button:disabled {
 .preview-window {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 49%;
   width: min(620px, 76%);
   aspect-ratio: 1.18;
   transform: translate(-50%, -50%);
@@ -441,9 +441,10 @@ button:disabled {
 
 .preview-card {
   position: absolute;
-  right: 12%;
-  bottom: 14%;
+  right: 10%;
+  top: 50%;
   width: 240px;
+  transform: translateY(-50%);
   display: grid;
   gap: 6px;
   padding: 16px;
