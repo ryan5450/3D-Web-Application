@@ -3,7 +3,18 @@ import { connectDB } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { Scene } from "@/models/Scene";
 
-const allowedKinds = new Set(["cube", "sphere", "cone", "torus", "duck", "customDuck", "customRobot"]);
+const allowedKinds = new Set([
+  "cube",
+  "sphere",
+  "cone",
+  "torus",
+  "chair",
+  "sofa",
+  "table",
+  "duck",
+  "customDuck",
+  "customRobot"
+]);
 
 function normalizeObjects(objects: unknown) {
   if (!Array.isArray(objects)) {
