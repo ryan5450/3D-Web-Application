@@ -1,41 +1,13 @@
 # 3D Web Application
 
-A full-stack Next.js 3D scene app with account signup/login, cookie sessions, MongoDB persistence, and draggable Three.js objects.
+A full-stack 3D scene editor built with Next.js, React, Three.js, and MongoDB.
 
-## Features
+The app supports account signup/login, cookie-backed sessions, per-user scene storage, draggable 3D objects, random object placement, and saved scene restoration after login.
 
-- Signup and login UI
-- Session-backed authentication
-- MongoDB user and scene storage
-- 3D room with cube, sphere, cone, torus, and remote GLB model options
-- Random object placement
-- Mouse dragging on the floor plane
-- Visual held-state scale/color feedback
-- Save and load scene objects per signed-in user
+## Core Capabilities
 
-## Run Locally
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Create `.env.local`:
-
-```bash
-MONGODB_URI=mongodb://127.0.0.1:27017/three_scene_app
-SESSION_PASSWORD=use-a-random-secret-with-at-least-32-characters
-```
-
-3. Start MongoDB locally, then run:
-
-```bash
-npm run dev
-```
-
-4. Open `http://localhost:3000`.
-
-## Notes
-
-The custom GLB option uses the public Khronos sample model URL at runtime. The app still works with built-in objects if that network asset is unavailable.
+- Authentication with signup, login, logout, and session tracking
+- MongoDB-backed user and scene persistence
+- Interactive Three.js room with cube, sphere, cone, torus, and GLB model options
+- Drag-and-drop object movement with visual held-state feedback
+- Save/load flow scoped to the signed-in user

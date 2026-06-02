@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   await Scene.findOneAndUpdate(
     { userId },
     { $set: { objects: normalizedObjects } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" }
   );
 
   return NextResponse.json({ ok: true, objects: normalizedObjects });
