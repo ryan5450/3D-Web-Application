@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, ThreeEvent } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { Environment, Grid, Html, OrbitControls, useCursor, useGLTF } from "@react-three/drei";
 import { LogOut, Plus, Save } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -14,6 +14,7 @@ type SceneObject = {
   kind: ObjectKind;
   position: { x: number; y: number; z: number };
   scale: number;
+  velocityY?: number;
 };
 
 const objectLabels: Record<ObjectKind, string> = {
@@ -32,11 +33,20 @@ type Props = {
   onLogout: () => void;
 };
 
-function randomPosition() {
+function groundY(kind: ObjectKind) {
+  return kind === "duck" ? 0.12 : 0.55;
+}
+
+function dropPosition(index: number, kind: ObjectKind) {
+  const columns = 4;
+  const spacing = 1.75;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+
   return {
-    x: Number((Math.random() * 7 - 3.5).toFixed(2)),
-    y: 0.55,
-    z: Number((Math.random() * 7 - 3.5).toFixed(2))
+    x: Number(((column - 1.5) * spacing).toFixed(2)),
+    y: 5.5,
+    z: Number((1.5 - row * spacing).toFixed(2))
   };
 }
 
@@ -47,6 +57,7 @@ function toVector(position: SceneObject["position"]) {
 export default function SceneEditor({ user, onLogout }: Props) {
   const [objects, setObjects] = useState<SceneObject[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [selectedKind, setSelectedKind] = useState<ObjectKind>("cube");
   const [status, setStatus] = useState("Loading scene...");
 
@@ -66,20 +77,25 @@ export default function SceneEditor({ user, onLogout }: Props) {
   }, []);
 
   function addObject() {
-    setObjects((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        kind: selectedKind,
-        position: randomPosition(),
-        scale: selectedKind === "duck" ? 0.018 : 1
-      }
-    ]);
+    setObjects((current) => {
+      const drop = dropPosition(current.length, selectedKind);
+
+      return [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          kind: selectedKind,
+          position: { x: drop.x, y: drop.y, z: drop.z },
+          scale: selectedKind === "duck" ? 0.018 : 1,
+          velocityY: 0
+        }
+      ];
+    });
     setStatus(`${objectLabels[selectedKind]} added`);
     setDialogOpen(false);
   }
 
-  function updateObjectPosition(id: string, nextPosition: THREE.Vector3) {
+  function updateObjectPosition(id: string, nextPosition: THREE.Vector3, velocityY?: number) {
     setObjects((current) =>
       current.map((object) =>
         object.id === id
@@ -87,9 +103,10 @@ export default function SceneEditor({ user, onLogout }: Props) {
               ...object,
               position: {
                 x: Number(nextPosition.x.toFixed(2)),
-                y: object.kind === "duck" ? 0.12 : Number(nextPosition.y.toFixed(2)),
+                y: Number(nextPosition.y.toFixed(2)),
                 z: Number(nextPosition.z.toFixed(2))
-              }
+              },
+              velocityY
             }
           : object
       )
@@ -98,10 +115,18 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
   async function saveScene() {
     setStatus("Saving...");
+    const savedObjects = objects.map(({ velocityY, ...object }) => ({
+      ...object,
+      position: {
+        ...object.position,
+        y: groundY(object.kind)
+      }
+    }));
+
     const response = await fetch("/api/scene", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ objects })
+      body: JSON.stringify({ objects: savedObjects })
     });
 
     setStatus(response.ok ? "Saved" : "Save failed");
@@ -136,15 +161,15 @@ export default function SceneEditor({ user, onLogout }: Props) {
       </div>
 
       <div className="canvas-wrap">
-        <Canvas camera={{ position: [6, 6, 8], fov: 45 }} shadows>
+        <Canvas camera={{ position: [6, 6, 8], fov: 45 }} shadows={{ type: THREE.PCFShadowMap }}>
           <color attach="background" args={["#d7e1eb"]} />
           <ambientLight intensity={0.65} />
           <directionalLight castShadow intensity={1.5} position={[5, 8, 5]} />
           <Suspense fallback={<Html center>Loading 3D scene...</Html>}>
-            <SceneRoom objects={objects} onMove={updateObjectPosition} />
+            <SceneRoom objects={objects} onDragChange={setDragging} onMove={updateObjectPosition} />
             <Environment preset="city" />
           </Suspense>
-          <OrbitControls makeDefault enableDamping />
+          <OrbitControls makeDefault enableDamping enabled={!dragging} />
         </Canvas>
       </div>
 
@@ -182,10 +207,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
 function SceneRoom({
   objects,
+  onDragChange,
   onMove
 }: {
   objects: SceneObject[];
-  onMove: (id: string, position: THREE.Vector3) => void;
+  onDragChange: (dragging: boolean) => void;
+  onMove: (id: string, position: THREE.Vector3, velocityY?: number) => void;
 }) {
   return (
     <>
@@ -212,7 +239,7 @@ function SceneRoom({
         <meshStandardMaterial color="#dbe4ed" />
       </mesh>
       {objects.map((object) => (
-        <DraggableObject key={object.id} object={object} onMove={onMove} />
+        <DraggableObject key={object.id} object={object} onDragChange={onDragChange} onMove={onMove} />
       ))}
     </>
   );
@@ -220,16 +247,29 @@ function SceneRoom({
 
 function DraggableObject({
   object,
+  onDragChange,
   onMove
 }: {
   object: SceneObject;
-  onMove: (id: string, position: THREE.Vector3) => void;
+  onDragChange: (dragging: boolean) => void;
+  onMove: (id: string, position: THREE.Vector3, velocityY?: number) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [held, setHeld] = useState(false);
   const position = useMemo(() => toVector(object.position), [object.position]);
+  const dragPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
 
   useCursor(hovered);
+
+  useFrame((_, delta) => {
+    if (held || object.position.y <= groundY(object.kind)) {
+      return;
+    }
+
+    const nextVelocity = (object.velocityY ?? 0) - 18 * delta;
+    const nextY = Math.max(groundY(object.kind), object.position.y + nextVelocity * delta);
+    onMove(object.id, new THREE.Vector3(object.position.x, nextY, object.position.z), nextY === groundY(object.kind) ? 0 : nextVelocity);
+  });
 
   function drag(event: ThreeEvent<PointerEvent>) {
     if (!held) {
@@ -237,9 +277,14 @@ function DraggableObject({
     }
 
     event.stopPropagation();
-    const point = event.point.clone();
-    point.y = object.kind === "duck" ? 0.12 : 0.55;
-    onMove(object.id, point);
+    const point = event.ray.intersectPlane(dragPlane, new THREE.Vector3());
+
+    if (!point) {
+      return;
+    }
+
+    point.y = groundY(object.kind);
+    onMove(object.id, point, 0);
   }
 
   return (
@@ -248,6 +293,7 @@ function DraggableObject({
         event.stopPropagation();
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         setHeld(true);
+        onDragChange(true);
       }}
       onPointerMove={drag}
       onPointerOver={(event) => {
@@ -259,6 +305,7 @@ function DraggableObject({
         event.stopPropagation();
         (event.target as HTMLElement).releasePointerCapture(event.pointerId);
         setHeld(false);
+        onDragChange(false);
       }}
       position={position}
     >
