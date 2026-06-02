@@ -38,6 +38,53 @@ type SceneObject = {
   targetY?: number;
 };
 
+type SoundKind = "add" | "select" | "drop" | "save" | "delete" | "duplicate" | "switch" | "camera";
+
+let sceneAudioContext: AudioContext | null = null;
+
+function playSound(kind: SoundKind) {
+  const AudioCtor =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+  if (!AudioCtor) return;
+
+  sceneAudioContext ||= new AudioCtor();
+  const context = sceneAudioContext;
+  if (context.state === "suspended") void context.resume();
+
+  const now = context.currentTime;
+  const settings: Record<SoundKind, { start: number; end: number; duration: number; volume: number; type: OscillatorType }> = {
+    add: { start: 360, end: 720, duration: 0.16, volume: 0.045, type: "sine" },
+    select: { start: 520, end: 430, duration: 0.08, volume: 0.028, type: "triangle" },
+    drop: { start: 210, end: 90, duration: 0.18, volume: 0.05, type: "sine" },
+    save: { start: 520, end: 880, duration: 0.22, volume: 0.04, type: "triangle" },
+    delete: { start: 220, end: 70, duration: 0.14, volume: 0.038, type: "sawtooth" },
+    duplicate: { start: 440, end: 660, duration: 0.14, volume: 0.035, type: "square" },
+    switch: { start: 330, end: 495, duration: 0.12, volume: 0.032, type: "triangle" },
+    camera: { start: 740, end: 560, duration: 0.09, volume: 0.04, type: "square" }
+  };
+  const sound = settings[kind];
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const filter = context.createBiquadFilter();
+
+  oscillator.type = sound.type;
+  oscillator.frequency.setValueAtTime(sound.start, now);
+  oscillator.frequency.exponentialRampToValueAtTime(sound.end, now + sound.duration);
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1800, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(sound.volume, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + sound.duration);
+
+  oscillator.connect(filter);
+  filter.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + sound.duration + 0.02);
+}
+
 const objectLabels: Record<ObjectKind, string> = {
   cube: "Soft Cube",
   sphere: "Sphere",
@@ -366,6 +413,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
       setSelectedObjectId(created.id);
       return [...current, created];
     });
+    playSound("add");
     setStatus(`${objectLabels[kind]} added`);
     setDialogOpen(false);
   }
@@ -410,12 +458,14 @@ export default function SceneEditor({ user, onLogout }: Props) {
     };
     setObjects((current) => [...current, copy]);
     setSelectedObjectId(copy.id);
+    playSound("duplicate");
   }
 
   function deleteSelected() {
     if (!selectedObject) return;
     setObjects((current) => current.filter((object) => object.id !== selectedObject.id));
     setSelectedObjectId(null);
+    playSound("delete");
   }
 
   function snapSelected() {
@@ -427,6 +477,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     });
     updateObjectPosition(selectedObject.id, new THREE.Vector3(zone.position.x, groundY(selectedObject.kind), zone.position.z), groundY(selectedObject.kind));
     setStatus(`Snapped to ${zone.label}`);
+    playSound("drop");
   }
 
   async function saveScene() {
@@ -438,6 +489,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
       body: JSON.stringify({ objects: savedObjects, slot: sceneSlot, theme })
     });
     setStatus(response.ok ? "Saved" : "Save failed");
+    playSound(response.ok ? "save" : "delete");
   }
 
   async function logout() {
@@ -451,6 +503,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setTheme(starter.theme);
     setSelectedObjectId(null);
     setStatus(`${sceneSlots.find((item) => item.value === sceneSlot)?.label || "Room"} reset`);
+    playSound("switch");
   }
 
   function downloadScreenshot() {
@@ -460,27 +513,49 @@ export default function SceneEditor({ user, onLogout }: Props) {
     link.download = `${sceneSlot}-snapshot.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
+    playSound("camera");
   }
 
   return (
     <main className="scene-page">
       <div className="scene-toolbar">
         <div className="toolbar-group">
-          <select className="select-control" value={sceneSlot} onChange={(event) => setSceneSlot(event.target.value)}>
+          <select
+            className="select-control"
+            value={sceneSlot}
+            onChange={(event) => {
+              setSceneSlot(event.target.value);
+              playSound("switch");
+            }}
+          >
             {sceneSlots.map((slot) => (
               <option key={slot.value} value={slot.value}>
                 {slot.label}
               </option>
             ))}
           </select>
-          <select className="select-control" value={theme} onChange={(event) => setTheme(event.target.value as ThemeKey)}>
+          <select
+            className="select-control"
+            value={theme}
+            onChange={(event) => {
+              setTheme(event.target.value as ThemeKey);
+              playSound("switch");
+            }}
+          >
             {Object.entries(themes).map(([key, value]) => (
               <option key={key} value={key}>
                 {value.label}
               </option>
             ))}
           </select>
-          <button className="primary" type="button" onClick={() => setDialogOpen(true)}>
+          <button
+            className="primary"
+            type="button"
+            onClick={() => {
+              setDialogOpen(true);
+              playSound("select");
+            }}
+          >
             <Plus size={18} />
             Add
           </button>
@@ -539,7 +614,10 @@ export default function SceneEditor({ user, onLogout }: Props) {
                   style={{ background: color }}
                   title={color}
                   type="button"
-                  onClick={() => updateObject(selectedObject.id, { color })}
+                  onClick={() => {
+                    updateObject(selectedObject.id, { color });
+                    playSound("select");
+                  }}
                 />
               ))}
             </div>
@@ -552,22 +630,6 @@ export default function SceneEditor({ user, onLogout }: Props) {
                 type="range"
                 value={selectedObject.scale}
                 onChange={(event) => updateObject(selectedObject.id, { scale: Number(event.target.value) })}
-              />
-            </label>
-            <label className="control-row">
-              Height
-              <input
-                max="5.5"
-                min="0"
-                step="0.05"
-                type="range"
-                value={selectedObject.position.y}
-                onChange={(event) =>
-                  updateObject(selectedObject.id, {
-                    position: { ...selectedObject.position, y: Number(event.target.value) },
-                    targetY: undefined
-                  })
-                }
               />
             </label>
             <label className="control-row">
@@ -610,7 +672,10 @@ export default function SceneEditor({ user, onLogout }: Props) {
                   key={kind}
                   className={selectedKind === kind ? "object-card selected" : "object-card"}
                   type="button"
-                  onClick={() => setSelectedKind(kind)}
+                  onClick={() => {
+                    setSelectedKind(kind);
+                    playSound("select");
+                  }}
                   onDoubleClick={() => addObject(kind)}
                 >
                   <span className="object-glyph">{objectLabels[kind].slice(0, 1)}</span>
@@ -745,6 +810,7 @@ function DraggableObject({
         onSelect(object.id);
         setHeld(true);
         onDragChange(true);
+        playSound("select");
       }}
       onPointerMove={drag}
       onPointerOver={(event) => {
@@ -757,6 +823,7 @@ function DraggableObject({
         (event.target as HTMLElement).releasePointerCapture(event.pointerId);
         setHeld(false);
         onDragChange(false);
+        playSound("drop");
       }}
       position={position}
       rotation={[0, object.rotationY || 0, 0]}
