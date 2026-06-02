@@ -443,9 +443,9 @@ button:disabled {
 
 .preview-card {
   position: absolute;
-  right: 16%;
-  top: 33%;
-  width: min(230px, 26vw);
+  right: 6%;
+  top: 14%;
+  width: min(220px, 38%);
   transform: none;
   display: grid;
   gap: 6px;

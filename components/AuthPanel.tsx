@@ -150,10 +150,10 @@ export default function AuthPanel({ onAuthenticated }: Props) {
             <div className="room-cube" />
             <div className="room-sphere" />
           </div>
-        </motion.div>
-        <motion.div animate={{ y: [0, -8, 0] }} className="preview-card" transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}>
-          <strong>Room saved</strong>
-          <span>Objects, lights, and mood restored after login</span>
+          <motion.div animate={{ y: [0, -6, 0] }} className="preview-card" transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}>
+            <strong>Room saved</strong>
+            <span>Objects, lights, and mood restored after login</span>
+          </motion.div>
         </motion.div>
       </section>
     </main>
