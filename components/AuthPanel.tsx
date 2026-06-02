@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import type { User } from "@/components/AppShell";
 
 type Props = {
@@ -31,24 +33,44 @@ export default function AuthPanel({ onAuthenticated }: Props) {
 
     if (!response.ok) {
       setError(data.error || "Authentication failed.");
+      toast.error(data.error || "Authentication failed.");
       return;
     }
 
+    toast.success(mode === "login" ? "Welcome back" : "Account created");
     onAuthenticated(data.user);
   }
 
   return (
     <main className="auth-page">
       <section className="auth-panel">
-        <div>
-          <h1>3D Web Application</h1>
-          <p>
-            Sign in to load your saved scene, add 3D objects, drag them around,
-            and save the layout to MongoDB.
-          </p>
-        </div>
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="auth-copy"
+          initial={{ opacity: 0, y: 14 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          <span className="eyebrow">Scene Workspace</span>
+          <h1>Design rooms in 3D</h1>
+          <p>Sign in to continue your saved layout, place objects naturally, and refine each room without losing your progress.</p>
+        </motion.div>
 
-        <form className="auth-form" onSubmit={submit}>
+        <motion.form
+          animate={{ opacity: 1, y: 0 }}
+          className="auth-form"
+          initial={{ opacity: 0, y: 18 }}
+          onSubmit={submit}
+          transition={{ duration: 0.38, delay: 0.08, ease: "easeOut" }}
+        >
+          <div className="mode-switch" aria-label="Authentication mode">
+            <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")} type="button">
+              Login
+            </button>
+            <button className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")} type="button">
+              Signup
+            </button>
+          </div>
+
           <label>
             Email
             <input
@@ -80,7 +102,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
           <div className="auth-actions">
             <button className="primary" disabled={busy} type="submit">
               {mode === "login" ? <LogIn size={18} /> : <UserPlus size={18} />}
-              {busy ? "Working..." : mode === "login" ? "Login" : "Signup"}
+              {busy ? "Working..." : mode === "login" ? "Enter workspace" : "Create workspace"}
             </button>
             <button
               className="ghost"
@@ -90,16 +112,28 @@ export default function AuthPanel({ onAuthenticated }: Props) {
                 setMode(mode === "login" ? "signup" : "login");
               }}
             >
-              {mode === "login" ? "Create account" : "Use login"}
+              {mode === "login" ? "New here?" : "Already have access?"}
             </button>
           </div>
-        </form>
+        </motion.form>
       </section>
 
       <section className="auth-preview" aria-hidden="true">
         <div className="preview-grid" />
-        <div className="preview-shape shape-a" />
-        <div className="preview-shape shape-b" />
+        <motion.div
+          animate={{ rotate: 18, y: [0, -10, 0] }}
+          className="preview-shape shape-a"
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          animate={{ y: [0, 14, 0], scale: [1, 1.05, 1] }}
+          className="preview-shape shape-b"
+          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div className="preview-card">
+          <strong>Room 02</strong>
+          <span>12 objects saved</span>
+        </div>
       </section>
     </main>
   );

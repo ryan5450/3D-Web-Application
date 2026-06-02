@@ -2,8 +2,12 @@
 
 import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { Environment, Grid, Html, OrbitControls, RoundedBox, useCursor, useGLTF } from "@react-three/drei";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { Camera, Copy, LogOut, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { toast } from "sonner";
 import * as THREE from "three";
 import type { User } from "@/components/AppShell";
 
@@ -83,6 +87,20 @@ function playSound(kind: SoundKind) {
   gain.connect(context.destination);
   oscillator.start(now);
   oscillator.stop(now + sound.duration + 0.02);
+}
+
+function Tip({ children, label }: { children: React.ReactNode; label: string }) {
+  return (
+    <Tooltip.Root delayDuration={250}>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip-content" sideOffset={8}>
+          {label}
+          <Tooltip.Arrow className="tooltip-arrow" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
 }
 
 const objectLabels: Record<ObjectKind, string> = {
@@ -415,6 +433,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     });
     playSound("add");
     setStatus(`${objectLabels[kind]} added`);
+    toast.success(`${objectLabels[kind]} added`);
     setDialogOpen(false);
   }
 
@@ -459,6 +478,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setObjects((current) => [...current, copy]);
     setSelectedObjectId(copy.id);
     playSound("duplicate");
+    toast.success("Object duplicated");
   }
 
   function deleteSelected() {
@@ -466,6 +486,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setObjects((current) => current.filter((object) => object.id !== selectedObject.id));
     setSelectedObjectId(null);
     playSound("delete");
+    toast("Object removed");
   }
 
   function snapSelected() {
@@ -478,6 +499,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     updateObjectPosition(selectedObject.id, new THREE.Vector3(zone.position.x, groundY(selectedObject.kind), zone.position.z), groundY(selectedObject.kind));
     setStatus(`Snapped to ${zone.label}`);
     playSound("drop");
+    toast.success(`Snapped to ${zone.label}`);
   }
 
   async function saveScene() {
@@ -490,6 +512,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     });
     setStatus(response.ok ? "Saved" : "Save failed");
     playSound(response.ok ? "save" : "delete");
+    toast[response.ok ? "success" : "error"](response.ok ? "Scene saved" : "Save failed");
   }
 
   async function logout() {
@@ -504,6 +527,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     setSelectedObjectId(null);
     setStatus(`${sceneSlots.find((item) => item.value === sceneSlot)?.label || "Room"} reset`);
     playSound("switch");
+    toast("Starter room restored");
   }
 
   function downloadScreenshot() {
@@ -514,10 +538,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
     link.href = canvas.toDataURL("image/png");
     link.click();
     playSound("camera");
+    toast.success("Screenshot downloaded");
   }
 
   return (
-    <main className="scene-page">
+    <Tooltip.Provider>
+      <main className="scene-page">
       <div className="scene-toolbar">
         <div className="toolbar-group">
           <select
@@ -548,24 +574,62 @@ export default function SceneEditor({ user, onLogout }: Props) {
               </option>
             ))}
           </select>
-          <button
-            className="primary"
-            type="button"
-            onClick={() => {
-              setDialogOpen(true);
-              playSound("select");
-            }}
-          >
-            <Plus size={18} />
-            Add
-          </button>
+          <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog.Trigger asChild>
+              <button
+                className="primary"
+                type="button"
+                onClick={() => {
+                  playSound("select");
+                }}
+              >
+                <Plus size={18} />
+                Add Object
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="dialog-backdrop" />
+              <Dialog.Content className="dialog object-picker">
+                <div className="dialog-header">
+                  <div>
+                    <Dialog.Title>Add Object</Dialog.Title>
+                    <Dialog.Description>Choose a shape, furniture piece, or custom model to drop into the room.</Dialog.Description>
+                  </div>
+                  <Dialog.Close className="dialog-close" aria-label="Close">Close</Dialog.Close>
+                </div>
+                <div className="object-card-grid">
+                  {objectOptions.map((kind) => (
+                    <button
+                      key={kind}
+                      className={selectedKind === kind ? "object-card selected" : "object-card"}
+                      type="button"
+                      onClick={() => {
+                        setSelectedKind(kind);
+                        playSound("select");
+                      }}
+                      onDoubleClick={() => addObject(kind)}
+                    >
+                      <span className="object-glyph">{objectLabels[kind].slice(0, 1)}</span>
+                      <span>{objectLabels[kind]}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="dialog-actions">
+                  <Dialog.Close className="ghost" type="button">Cancel</Dialog.Close>
+                  <button className="primary" type="button" onClick={() => addObject()}>Add to Room</button>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
           <button className="secondary" type="button" onClick={saveScene}>
             <Save size={18} />
             Save
           </button>
-          <button className="ghost icon-command" title="Download screenshot" type="button" onClick={downloadScreenshot}>
-            <Camera size={18} />
-          </button>
+          <Tip label="Download screenshot">
+            <button className="ghost icon-command" type="button" onClick={downloadScreenshot}>
+              <Camera size={18} />
+            </button>
+          </Tip>
           <span className="status">{status}</span>
         </div>
         <div className="toolbar-group">
@@ -602,7 +666,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
       </div>
 
       <aside className="editor-panel">
-        <div className="panel-title">Object Tools</div>
+        <div className="panel-title">Inspector</div>
         {selectedObject ? (
           <>
             <div className="selected-name">{objectLabels[selectedObject.kind]}</div>
@@ -645,52 +709,30 @@ export default function SceneEditor({ user, onLogout }: Props) {
             </label>
             <div className="tool-grid">
               <button className="tool-button" type="button" onClick={snapSelected}>Snap</button>
-              <button className="tool-button" type="button" onClick={() => updateObject(selectedObject.id, { rotationY: 0 })}>
-                <RotateCcw size={16} />
-              </button>
-              <button className="tool-button" type="button" onClick={duplicateSelected}>
-                <Copy size={16} />
-              </button>
-              <button className="tool-button danger" type="button" onClick={deleteSelected}>
-                <Trash2 size={16} />
-              </button>
+              <Tip label="Reset rotation">
+                <button className="tool-button" type="button" onClick={() => updateObject(selectedObject.id, { rotationY: 0 })}>
+                  <RotateCcw size={16} />
+                </button>
+              </Tip>
+              <Tip label="Duplicate object">
+                <button className="tool-button" type="button" onClick={duplicateSelected}>
+                  <Copy size={16} />
+                </button>
+              </Tip>
+              <Tip label="Delete object">
+                <button className="tool-button danger" type="button" onClick={deleteSelected}>
+                  <Trash2 size={16} />
+                </button>
+              </Tip>
             </div>
           </>
         ) : (
-          <p className="panel-empty">Select an object to edit color, size, rotation, duplicate, snap, or delete.</p>
+          <p className="panel-empty">Select an object to edit its color, scale, rotation, and placement tools.</p>
         )}
-        <button className="tool-button full" type="button" onClick={resetRoom}>Reset Starter Room</button>
+        <button className="tool-button full" type="button" onClick={resetRoom}>Reset Room</button>
       </aside>
-
-      {dialogOpen && (
-        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setDialogOpen(false)}>
-          <div className="dialog object-picker" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-            <h2>Add Object</h2>
-            <div className="object-card-grid">
-              {objectOptions.map((kind) => (
-                <button
-                  key={kind}
-                  className={selectedKind === kind ? "object-card selected" : "object-card"}
-                  type="button"
-                  onClick={() => {
-                    setSelectedKind(kind);
-                    playSound("select");
-                  }}
-                  onDoubleClick={() => addObject(kind)}
-                >
-                  <span className="object-glyph">{objectLabels[kind].slice(0, 1)}</span>
-                  <span>{objectLabels[kind]}</span>
-                </button>
-              ))}
-            </div>
-            <div className="dialog-actions">
-              <button className="ghost" type="button" onClick={() => setDialogOpen(false)}>Cancel</button>
-              <button className="primary" type="button" onClick={() => addObject()}>Add</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
+      </main>
+    </Tooltip.Provider>
   );
 }
 

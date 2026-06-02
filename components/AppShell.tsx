@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 import AuthPanel from "@/components/AuthPanel";
 import SceneEditor from "@/components/SceneEditor";
 
@@ -30,8 +31,18 @@ export default function AppShell() {
   }, []);
 
   if (!user) {
-    return <AuthPanel onAuthenticated={setUser} />;
+    return (
+      <>
+        <AuthPanel onAuthenticated={setUser} />
+        <Toaster position="bottom-center" richColors />
+      </>
+    );
   }
 
-  return <SceneEditor user={user} onLogout={() => setUser(null)} />;
+  return (
+    <>
+      <SceneEditor user={user} onLogout={() => setUser(null)} />
+      <Toaster position="bottom-center" richColors />
+    </>
+  );
 }
