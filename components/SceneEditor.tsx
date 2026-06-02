@@ -156,6 +156,75 @@ function groundY(kind: ObjectKind) {
   return 0;
 }
 
+function objectHeight(kind: ObjectKind, scale = 1) {
+  const heights: Partial<Record<ObjectKind, number>> = {
+    cube: 1,
+    sphere: 1.24,
+    cone: 1.18,
+    torus: 0.36,
+    chair: 1.5,
+    sofa: 1.12,
+    table: 0.82,
+    lamp: 1.22,
+    plant: 1.25,
+    bookshelf: 1.8,
+    rug: 0.08,
+    tv: 1.25,
+    bed: 0.9,
+    cabinet: 1.1,
+    customDuck: 1.2,
+    customRobot: 1.85,
+    duck: 1.2
+  };
+
+  return (heights[kind] || 1) * scale;
+}
+
+function centerOffset(kind: ObjectKind, scale = 1) {
+  return groundY(kind) * scale;
+}
+
+function objectBottom(object: SceneObject) {
+  return object.position.y - centerOffset(object.kind, object.scale);
+}
+
+function objectTop(object: SceneObject) {
+  return objectBottom(object) + objectHeight(object.kind, object.scale);
+}
+
+function supportRadius(kind: ObjectKind, scale = 1) {
+  if (kind === "cone") return 0.08 * scale;
+  if (kind === "sphere" || kind === "torus" || kind === "lamp" || kind === "plant") return 0.22 * scale;
+  if (kind === "rug") return 0;
+  return objectRadius(kind) * scale * 0.9;
+}
+
+function footprintRadius(kind: ObjectKind, scale = 1) {
+  if (kind === "cone") return 0.38 * scale;
+  if (kind === "rug") return 0.9 * scale;
+  return objectRadius(kind) * scale * 0.58;
+}
+
+function computeRestY(object: SceneObject, objects: SceneObject[]) {
+  let restY = centerOffset(object.kind, object.scale);
+  const ownFootprint = footprintRadius(object.kind, object.scale);
+
+  for (const candidate of objects) {
+    if (candidate.id === object.id) continue;
+
+    const dx = candidate.position.x - object.position.x;
+    const dz = candidate.position.z - object.position.z;
+    const horizontalDistance = Math.hypot(dx, dz);
+    const availableSupport = supportRadius(candidate.kind, candidate.scale) - ownFootprint * 0.45;
+
+    if (availableSupport <= 0 || horizontalDistance > availableSupport) continue;
+
+    restY = Math.max(restY, objectTop(candidate) + centerOffset(object.kind, object.scale));
+  }
+
+  return Number(restY.toFixed(2));
+}
+
 function objectScale(kind: ObjectKind) {
   if (kind === "customDuck" || kind === "customRobot") return 0.018;
   if (kind === "rug") return 1.25;
@@ -209,6 +278,12 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
         const a = next[i];
         const b = next[j];
         const minDistance = objectRadius(a.kind) + objectRadius(b.kind);
+        const separatedVertically =
+          objectBottom(a) >= objectTop(b) - 0.05 ||
+          objectBottom(b) >= objectTop(a) - 0.05;
+
+        if (separatedVertically) continue;
+
         const dx = b.position.x - a.position.x;
         const dz = b.position.z - a.position.z;
         const distance = Math.hypot(dx, dz) || 0.001;
@@ -480,6 +555,22 @@ export default function SceneEditor({ user, onLogout }: Props) {
               />
             </label>
             <label className="control-row">
+              Height
+              <input
+                max="5.5"
+                min="0"
+                step="0.05"
+                type="range"
+                value={selectedObject.position.y}
+                onChange={(event) =>
+                  updateObject(selectedObject.id, {
+                    position: { ...selectedObject.position, y: Number(event.target.value) },
+                    targetY: undefined
+                  })
+                }
+              />
+            </label>
+            <label className="control-row">
               Rotate
               <input
                 max="6.28"
@@ -559,6 +650,7 @@ function SceneRoom({
       {objects.map((object) => (
         <DraggableObject
           key={object.id}
+          allObjects={objects}
           object={object}
           selected={object.id === selectedObjectId}
           onDragChange={onDragChange}
@@ -579,12 +671,6 @@ function RoomShell({ theme }: { theme: ThemeKey }) {
         <meshStandardMaterial color={colors.floor} roughness={0.82} />
       </mesh>
       <Grid args={[14, 14]} cellColor="#a7adb5" cellSize={1} fadeDistance={22} fadeStrength={1} position={[0, 0.01, 0]} sectionColor={colors.grid} sectionSize={2} />
-      {snapZones.map((zone) => (
-        <mesh key={zone.id} position={[zone.position.x, 0.025, zone.position.z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.45, 0.5, 48]} />
-          <meshBasicMaterial color="#0f9f7a" transparent opacity={0.32} />
-        </mesh>
-      ))}
       <mesh receiveShadow position={[0, 2.25, -6.9]}>
         <boxGeometry args={[14, 4.5, 0.16]} />
         <meshStandardMaterial color={colors.wall} roughness={0.86} />
@@ -614,12 +700,14 @@ function WallFrame({ position, tall = false }: { position: [number, number, numb
 
 function DraggableObject({
   object,
+  allObjects,
   selected,
   onDragChange,
   onMove,
   onSelect
 }: {
   object: SceneObject;
+  allObjects: SceneObject[];
   selected: boolean;
   onDragChange: (dragging: boolean) => void;
   onMove: (id: string, position: THREE.Vector3, targetY?: number) => void;
@@ -632,7 +720,7 @@ function DraggableObject({
   useCursor(hovered);
 
   useFrame((_, delta) => {
-    const targetY = object.targetY ?? object.position.y;
+    const targetY = computeRestY(object, allObjects);
     if (!held && Math.abs(object.position.y - targetY) >= 0.025) {
       const smoothing = 1 - Math.pow(0.0006, delta);
       const nextY = THREE.MathUtils.lerp(object.position.y, targetY, smoothing);
@@ -645,8 +733,8 @@ function DraggableObject({
     event.stopPropagation();
     const point = event.ray.intersectPlane(dragPlane, new THREE.Vector3());
     if (!point) return;
-    point.y = groundY(object.kind);
-    onMove(object.id, point, groundY(object.kind));
+    point.y = object.position.y;
+    onMove(object.id, point, object.targetY);
   }
 
   return (
