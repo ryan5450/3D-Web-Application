@@ -27,7 +27,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -227,6 +228,16 @@ button {
   font-weight: 700;
 }
 
+.select-control {
+  min-height: 42px;
+  border: 1px solid rgba(215, 222, 232, 0.9);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--dark);
+  font-weight: 800;
+}
+
 .canvas-wrap {
   width: 100%;
   height: 100%;
@@ -279,6 +290,138 @@ button {
   gap: 10px;
 }
 
+.editor-panel {
+  position: fixed;
+  z-index: 4;
+  right: 18px;
+  top: 84px;
+  width: 270px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(215, 222, 232, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 60px rgba(16, 24, 40, 0.18);
+}
+
+.panel-title {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.selected-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--dark);
+}
+
+.panel-empty {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+.swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.18);
+}
+
+.control-row {
+  display: grid;
+  gap: 6px;
+  color: var(--dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.control-row input {
+  width: 100%;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 42px 42px 42px;
+  gap: 8px;
+}
+
+.tool-button {
+  min-height: 38px;
+  border-radius: 8px;
+  background: #eef3f8;
+  color: var(--dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+.tool-button.full {
+  width: 100%;
+}
+
+.tool-button.danger {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.icon-command {
+  width: 42px;
+  padding: 0;
+}
+
+.object-picker {
+  width: min(680px, 100%);
+}
+
+.object-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.object-card {
+  min-height: 88px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 10px;
+  color: var(--dark);
+  font-weight: 900;
+}
+
+.object-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(15, 159, 122, 0.18);
+}
+
+.object-glyph {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e6f4ef;
+  color: var(--accent-strong);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
 @media (max-width: 800px) {
   .auth-page {
     grid-template-columns: 1fr;
@@ -296,5 +439,17 @@ button {
   .scene-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .editor-panel {
+    left: 18px;
+    right: 18px;
+    top: auto;
+    bottom: 18px;
+    width: auto;
+  }
+
+  .object-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

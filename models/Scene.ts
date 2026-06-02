@@ -9,7 +9,21 @@ const SceneObjectSchema = new Schema(
       y: { type: Number, required: true },
       z: { type: Number, required: true }
     },
-    scale: { type: Number, required: true, default: 1 }
+    scale: { type: Number, required: true, default: 1 },
+    rotationY: { type: Number, required: true, default: 0 },
+    color: { type: String, required: false }
+  },
+  { _id: false }
+);
+
+const SceneSlotSchema = new Schema(
+  {
+    slot: { type: String, required: true },
+    theme: { type: String, required: true, default: "cozy" },
+    objects: {
+      type: [SceneObjectSchema],
+      default: []
+    }
   },
   { _id: false }
 );
@@ -24,6 +38,10 @@ const SceneSchema = new Schema(
     },
     objects: {
       type: [SceneObjectSchema],
+      default: []
+    },
+    scenes: {
+      type: [SceneSlotSchema],
       default: []
     }
   },
