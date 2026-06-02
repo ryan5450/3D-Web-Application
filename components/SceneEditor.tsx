@@ -1011,11 +1011,6 @@ function PlayLabRoom({ colors, nightMode }: { colors: (typeof themes)[ThemeKey];
       <RoundedBox args={[1.05, 2.1, 0.24]} position={[4.6, 1.05, -6.5]} radius={0.52} smoothness={18}>
         <meshStandardMaterial color="#93c5fd" roughness={0.5} />
       </RoundedBox>
-      {[[-4.9, 0.42, 3.8], [-3.95, 0.74, 3.8], [-3.0, 1.08, 3.8]].map((position, index) => (
-        <RoundedBox key={position.join("-")} args={[0.82, 0.82, 0.82]} position={position as [number, number, number]} radius={0.14} smoothness={12}>
-          <meshStandardMaterial color={palette[index]} roughness={0.46} />
-        </RoundedBox>
-      ))}
       <pointLight color="#fff7c2" distance={6} intensity={nightMode ? 1.05 : 0.56} position={[1.8, 3.8, 1.2]} />
       {nightMode && (
         <>
