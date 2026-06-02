@@ -304,6 +304,58 @@ function objectRadius(kind: ObjectKind) {
   return 0.78;
 }
 
+function collisionRadius(object: SceneObject) {
+  return objectRadius(object.kind) * object.scale;
+}
+
+function clearanceScore(object: SceneObject, objects: SceneObject[]) {
+  return objects.reduce((score, candidate) => {
+    if (candidate.id === object.id) return score;
+    if (objectBottom(object) >= objectTop(candidate) - 0.05 || objectBottom(candidate) >= objectTop(object) - 0.05) return score;
+
+    const distance = Math.hypot(candidate.position.x - object.position.x, candidate.position.z - object.position.z);
+    const minDistance = collisionRadius(object) + collisionRadius(candidate);
+    return score + Math.max(0, minDistance - distance);
+  }, 0);
+}
+
+function snapPositionFor(object: SceneObject, zone: (typeof snapZones)[number], objects: SceneObject[]) {
+  const radius = Math.max(0.65, collisionRadius(object) * 0.72);
+  const candidates = [
+    { x: zone.position.x, z: zone.position.z },
+    ...[0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, Math.PI, (Math.PI * 5) / 4, (Math.PI * 3) / 2, (Math.PI * 7) / 4].map((angle) => ({
+      x: zone.position.x + Math.cos(angle) * radius,
+      z: zone.position.z + Math.sin(angle) * radius
+    })),
+    ...[0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2].map((angle) => ({
+      x: zone.position.x + Math.cos(angle) * radius * 1.7,
+      z: zone.position.z + Math.sin(angle) * radius * 1.7
+    }))
+  ];
+
+  const options = candidates.map((candidate) => {
+    const snapped = cleanObject({
+      ...object,
+      position: {
+        x: Number(clampRoom(candidate.x).toFixed(2)),
+        y: centerOffset(object.kind, object.scale),
+        z: Number(clampRoom(candidate.z).toFixed(2))
+      }
+    });
+    const settled = {
+      ...snapped,
+      position: {
+        ...snapped.position,
+        y: computeRestY(snapped, objects)
+      }
+    };
+    const distance = Math.hypot(settled.position.x - zone.position.x, settled.position.z - zone.position.z);
+    return { object: settled, score: clearanceScore(settled, objects), distance };
+  });
+
+  return options.sort((a, b) => a.score - b.score || a.distance - b.distance)[0].object;
+}
+
 function dropPosition(index: number, kind: ObjectKind) {
   const columns = 4;
   const spacing = 1.65;
@@ -342,7 +394,7 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
       for (let j = i + 1; j < next.length; j += 1) {
         const a = next[i];
         const b = next[j];
-        const minDistance = objectRadius(a.kind) + objectRadius(b.kind);
+        const minDistance = collisionRadius(a) + collisionRadius(b);
         const separatedVertically =
           objectBottom(a) >= objectTop(b) - 0.05 ||
           objectBottom(b) >= objectTop(a) - 0.05;
@@ -526,7 +578,13 @@ export default function SceneEditor({ user, onLogout }: Props) {
       const nextDistance = Math.hypot(current.position.x - selectedObject.position.x, current.position.z - selectedObject.position.z);
       return nextDistance < bestDistance ? current : best;
     });
-    updateObjectPosition(selectedObject.id, new THREE.Vector3(zone.position.x, groundY(selectedObject.kind), zone.position.z), groundY(selectedObject.kind));
+    const snappedObject = snapPositionFor(selectedObject, zone, objects);
+    setObjects((current) =>
+      resolveObjectCollisions(
+        current.map((object) => (object.id === selectedObject.id ? snappedObject : object)),
+        selectedObject.id
+      )
+    );
     setStatus(`Snapped to ${zone.label}`);
     playSound("drop");
     toast.success(`Snapped to ${zone.label}`);
