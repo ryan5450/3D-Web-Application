@@ -274,6 +274,7 @@ function footprintRadius(kind: ObjectKind, scale = 1) {
 function computeRestY(object: SceneObject, objects: SceneObject[]) {
   let restY = centerOffset(object.kind, object.scale);
   const ownFootprint = footprintRadius(object.kind, object.scale);
+  const bottom = objectBottom(object);
 
   for (const candidate of objects) {
     if (candidate.id === object.id) continue;
@@ -283,10 +284,12 @@ function computeRestY(object: SceneObject, objects: SceneObject[]) {
     const dz = candidate.position.z - object.position.z;
     const horizontalDistance = Math.hypot(dx, dz);
     const availableSupport = supportRadius(candidate.kind, candidate.scale) - ownFootprint * 0.45;
+    const candidateTop = objectTop(candidate);
+    const closeEnoughToRestOnTop = bottom >= candidateTop - 0.16;
 
-    if (availableSupport <= 0 || horizontalDistance > availableSupport) continue;
+    if (!closeEnoughToRestOnTop || availableSupport <= 0 || horizontalDistance > availableSupport) continue;
 
-    restY = Math.max(restY, objectTop(candidate) + centerOffset(object.kind, object.scale));
+    restY = Math.max(restY, candidateTop + centerOffset(object.kind, object.scale));
   }
 
   return Number(restY.toFixed(2));
@@ -418,15 +421,27 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
 
         const dx = b.position.x - a.position.x;
         const dz = b.position.z - a.position.z;
-        const distance = Math.hypot(dx, dz) || 0.001;
+        const rawDistance = Math.hypot(dx, dz);
+        const distance = rawDistance || 0.001;
 
         if (distance >= minDistance) continue;
 
-        const overlap = minDistance - distance;
-        const directionX = dx / distance;
-        const directionZ = dz / distance;
         const activeA = a.id === activeId;
         const activeB = b.id === activeId;
+        const overlap = minDistance - distance;
+        let directionX = dx / distance;
+        let directionZ = dz / distance;
+
+        if (rawDistance < 0.01) {
+          const source = activeA ? a : activeB ? b : a;
+          const outwardLength = Math.hypot(source.position.x, source.position.z) || 1;
+          const outwardX = source.position.x / outwardLength;
+          const outwardZ = source.position.z / outwardLength;
+          const directionSign = activeA ? -1 : 1;
+          directionX = outwardX * directionSign;
+          directionZ = outwardZ * directionSign;
+        }
+
         const wallA =
           Math.abs(a.position.x) > 5.45 ||
           Math.abs(a.position.z) > 5.45;
