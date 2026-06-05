@@ -199,7 +199,7 @@ const starterScenes: Record<string, { theme: ThemeKey; objects: SceneObject[] }>
       { id: "room3-sphere", kind: "sphere", color: "#ef4444", position: { x: 1.85, y: 0.55, z: 0.2 }, scale: 1, rotationY: 0 },
       { id: "room3-cube", kind: "cube", color: "#2563eb", position: { x: 3.25, y: 0.55, z: 0.95 }, scale: 0.9, rotationY: 0.55 },
       { id: "room3-cone", kind: "cone", color: "#0f9f7a", position: { x: 2.8, y: 0.6, z: -1.6 }, scale: 1, rotationY: 0 },
-      { id: "room3-robot", kind: "customRobot", position: { x: -0.65, y: 0, z: -1.4 }, scale: 0.018, rotationY: 0.55 },
+      { id: "room3-robot", kind: "customRobot", position: { x: -0.65, y: 0, z: -1.4 }, scale: 1, rotationY: 0.55 },
       { id: "room3-plant", kind: "plant", position: { x: 4.35, y: 0, z: -2.45 }, scale: 0.95, rotationY: 0 }
     ]
   }
@@ -276,6 +276,7 @@ function computeRestY(object: SceneObject, objects: SceneObject[]) {
 
   for (const candidate of objects) {
     if (candidate.id === object.id) continue;
+    if (!canSupportObject(candidate.kind)) continue;
 
     const dx = candidate.position.x - object.position.x;
     const dz = candidate.position.z - object.position.z;
@@ -291,8 +292,13 @@ function computeRestY(object: SceneObject, objects: SceneObject[]) {
 }
 
 function objectScale(kind: ObjectKind) {
-  if (kind === "customDuck" || kind === "customRobot") return 0.018;
   if (kind === "rug") return 1.25;
+  return 1;
+}
+
+function modelBaseScale(kind: ObjectKind) {
+  if (kind === "customDuck" || kind === "duck") return 0.68;
+  if (kind === "customRobot") return 0.68;
   return 1;
 }
 
@@ -302,6 +308,10 @@ function objectRadius(kind: ObjectKind) {
   if (["table", "rug"].includes(kind)) return 1.05;
   if (["chair", "lamp", "plant", "tv", "customDuck", "customRobot", "duck"].includes(kind)) return 0.9;
   return 0.78;
+}
+
+function canSupportObject(kind: ObjectKind) {
+  return ["cube", "table", "cabinet", "bookshelf", "sofa", "bed"].includes(kind);
 }
 
 function collisionRadius(object: SceneObject) {
@@ -378,18 +388,22 @@ function normalizeKind(kind: ObjectKind): ObjectKind {
 }
 
 function cleanObject(object: SceneObject): SceneObject {
+  const kind = normalizeKind(object.kind);
+  const legacyCustomScale =
+    (kind === "customDuck" || kind === "customRobot") && object.scale > 0 && object.scale < 0.1;
+
   return {
     ...object,
-    kind: normalizeKind(object.kind),
+    kind,
     rotationY: object.rotationY ?? 0,
-    scale: object.scale || objectScale(object.kind)
+    scale: legacyCustomScale ? 1 : object.scale || objectScale(kind)
   };
 }
 
 function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
   const next = objects.map((object) => ({ ...cleanObject(object), position: { ...object.position } }));
 
-  for (let pass = 0; pass < 5; pass += 1) {
+  for (let pass = 0; pass < 8; pass += 1) {
     for (let i = 0; i < next.length; i += 1) {
       for (let j = i + 1; j < next.length; j += 1) {
         const a = next[i];
@@ -412,8 +426,14 @@ function resolveObjectCollisions(objects: SceneObject[], activeId: string) {
         const directionZ = dz / distance;
         const activeA = a.id === activeId;
         const activeB = b.id === activeId;
-        const moveA = activeB ? overlap : activeA ? 0 : overlap * 0.5;
-        const moveB = activeA ? overlap : activeB ? 0 : overlap * 0.5;
+        const wallA =
+          Math.abs(a.position.x) > 5.45 ||
+          Math.abs(a.position.z) > 5.45;
+        const wallB =
+          Math.abs(b.position.x) > 5.45 ||
+          Math.abs(b.position.z) > 5.45;
+        const moveA = activeB || (wallB && !activeA) ? overlap : activeA ? 0 : overlap * 0.5;
+        const moveB = activeA || (wallA && !activeB) ? overlap : activeB ? 0 : overlap * 0.5;
 
         a.position.x = clampRoom(a.position.x - directionX * moveA);
         a.position.z = clampRoom(a.position.z - directionZ * moveA);
@@ -505,7 +525,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
               scale,
               position: {
                 ...object.position,
-                y: centerOffset(object.kind, scale)
+                y: computeRestY(cleanObject({ ...object, scale }), current)
               }
             })
           : object
@@ -1294,7 +1314,7 @@ function Cabinet({ color, scale, selected }: { color: string; scale: number; sel
 function CustomModel({ held, kind, scale, selected }: { held: boolean; kind: ObjectKind; scale: number; selected: boolean }) {
   const gltf = useGLTF(modelUrls[kind] || modelUrls.customDuck!);
   return (
-    <group scale={scale * 38 * (held ? 1.08 : 1)}>
+    <group scale={modelBaseScale(kind) * scale * (held ? 1.08 : 1)}>
       <SelectionRing selected={selected} />
       <mesh><sphereGeometry args={[1.2, 16, 12]} /><meshBasicMaterial depthWrite={false} opacity={0} transparent /></mesh>
       <primitive object={gltf.scene.clone()} rotation={[0, Math.PI / 8, 0]} />
