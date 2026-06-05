@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Box, CheckCircle2, Layers3, LogIn, Moon, ShieldCheck, Sun, UserPlus } from "lucide-react";
+import { Box, CheckCircle2, Layers3, LoaderCircle, LogIn, Moon, ShieldCheck, Sun, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import type { User } from "@/components/AppShell";
+import { useTabBusy } from "@/components/useTabBusy";
 
 type Props = {
   onAuthenticated: (user: User) => void;
@@ -17,6 +18,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nightMode, setNightMode] = useState(false);
+  useTabBusy(busy, mode === "login" ? "Signing in" : "Creating account");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,7 +123,7 @@ export default function AuthPanel({ onAuthenticated }: Props) {
 
           <div className="auth-actions">
             <button className="primary" disabled={busy} type="submit">
-              {mode === "login" ? <LogIn size={18} /> : <UserPlus size={18} />}
+              {busy ? <LoaderCircle className="spin-icon" size={18} /> : mode === "login" ? <LogIn size={18} /> : <UserPlus size={18} />}
               {busy ? "Working..." : mode === "login" ? "Open editor" : "Create account"}
             </button>
             <button

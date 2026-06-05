@@ -10,6 +10,7 @@ import type React from "react";
 import { toast } from "sonner";
 import * as THREE from "three";
 import type { User } from "@/components/AppShell";
+import { useTabBusy } from "@/components/useTabBusy";
 
 type ObjectKind =
   | "cube"
@@ -463,8 +464,12 @@ export default function SceneEditor({ user, onLogout }: Props) {
   const [sceneSlot, setSceneSlot] = useState("room-1");
   const [nightMode, setNightMode] = useState(false);
   const [status, setStatus] = useState("Loading scene...");
+  const [loadingScene, setLoadingScene] = useState(false);
+  const [savingScene, setSavingScene] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const selectedObject = objects.find((object) => object.id === selectedObjectId) || null;
+  useTabBusy(loadingScene || savingScene || loggingOut, loggingOut ? "Logging out" : savingScene ? "Saving scene" : "Loading scene");
 
   useEffect(() => {
     loadScene(sceneSlot);
@@ -473,22 +478,27 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
   async function loadScene(slot: string) {
     setStatus("Loading scene...");
-    const response = await fetch(`/api/scene?slot=${slot}`);
+    setLoadingScene(true);
     const starter = starterForSlot(slot);
-    if (response.ok) {
-      const data = await response.json();
-      const hasSavedScene = Boolean(data.saved);
-      const loadedObjects = Array.isArray(data.objects) ? data.objects.map(cleanObject) : [];
-      setObjects(hasSavedScene ? loadedObjects : starter.objects);
-      setTheme(hasSavedScene ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
-      setNightMode(hasSavedScene ? Boolean(data.nightMode) : false);
-      setSelectedObjectId(null);
-      setStatus(hasSavedScene ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
-    } else {
-      setObjects(starter.objects);
-      setTheme(starter.theme);
-      setNightMode(false);
-      setStatus(`${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
+    try {
+      const response = await fetch(`/api/scene?slot=${slot}`);
+      if (response.ok) {
+        const data = await response.json();
+        const hasSavedScene = Boolean(data.saved);
+        const loadedObjects = Array.isArray(data.objects) ? data.objects.map(cleanObject) : [];
+        setObjects(hasSavedScene ? loadedObjects : starter.objects);
+        setTheme(hasSavedScene ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
+        setNightMode(hasSavedScene ? Boolean(data.nightMode) : false);
+        setSelectedObjectId(null);
+        setStatus(hasSavedScene ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
+      } else {
+        setObjects(starter.objects);
+        setTheme(starter.theme);
+        setNightMode(false);
+        setStatus(`${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
+      }
+    } finally {
+      setLoadingScene(false);
     }
   }
 
@@ -615,20 +625,30 @@ export default function SceneEditor({ user, onLogout }: Props) {
 
   async function saveScene() {
     setStatus("Saving...");
+    setSavingScene(true);
     const savedObjects = objects.map(({ targetY, ...object }) => cleanObject(object));
-    const response = await fetch("/api/scene", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ objects: savedObjects, slot: sceneSlot, theme, nightMode })
-    });
-    setStatus(response.ok ? "Saved" : "Save failed");
-    playSound(response.ok ? "save" : "delete");
-    toast[response.ok ? "success" : "error"](response.ok ? "Scene saved" : "Save failed");
+    try {
+      const response = await fetch("/api/scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objects: savedObjects, slot: sceneSlot, theme, nightMode })
+      });
+      setStatus(response.ok ? "Saved" : "Save failed");
+      playSound(response.ok ? "save" : "delete");
+      toast[response.ok ? "success" : "error"](response.ok ? "Scene saved" : "Save failed");
+    } finally {
+      setSavingScene(false);
+    }
   }
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    onLogout();
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      onLogout();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   function resetRoom() {

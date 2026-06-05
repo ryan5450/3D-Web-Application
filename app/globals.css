@@ -302,6 +302,16 @@ button:disabled {
   background: var(--accent-strong);
 }
 
+.spin-icon {
+  animation: icon-spin 850ms linear infinite;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .secondary {
   background: linear-gradient(180deg, #223047, var(--dark));
   color: white;
