@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 
-const defaultTitle = "3D Web Application";
 const defaultIcon = "/icon.svg";
 
 function busyIcon(label: string, frame: number) {
@@ -36,11 +35,9 @@ export function useTabBusy(isBusy: boolean, label = "Loading") {
   useEffect(() => {
     if (!isBusy) return;
 
-    const previousTitle = document.title;
     const previousIcon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href;
     let frame = 0;
 
-    document.title = `${label}... - ${defaultTitle}`;
     setIcon(busyIcon(label, frame));
 
     const interval = window.setInterval(() => {
@@ -50,7 +47,6 @@ export function useTabBusy(isBusy: boolean, label = "Loading") {
 
     return () => {
       window.clearInterval(interval);
-      document.title = previousTitle || defaultTitle;
       setIcon(previousIcon || defaultIcon);
     };
   }, [isBusy, label]);
