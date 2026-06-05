@@ -1,13 +1,28 @@
 # 3D Web Application
 
-A full-stack 3D scene editor built with Next.js, React, Three.js, and MongoDB.
+Live app: https://3d-web-app-pi.vercel.app
 
-The app supports account signup/login, cookie-backed sessions, per-user scene storage, draggable 3D objects, random object placement, and saved scene restoration after login.
+An interactive 3D room editor built with Next.js, React, Three.js, and MongoDB. Users can sign up, log in, design rooms with draggable objects, switch moods, and save each scene to their account.
 
-## Core Capabilities
+## Highlights
 
-- Authentication with signup, login, logout, and session tracking
-- MongoDB-backed user and scene persistence
-- Interactive Three.js room with cube, sphere, cone, torus, and GLB model options
-- Drag-and-drop object movement with visual held-state feedback
-- Save/load flow scoped to the signed-in user
+- Account signup, login, logout, and cookie-backed sessions
+- Per-user scene persistence with MongoDB
+- Three distinct room styles with saved room selection
+- Drag-and-drop 3D objects with collision-aware placement
+- Cubes, spheres, cones, torus shapes, furniture, decor, and custom GLB models
+- Object selection, resizing, rotation, duplication, deletion, and color editing
+- Day/night mode with saved scene mood restoration
+- Sound effects, screenshot export, snap zones, and responsive layout support
+
+## Stack
+
+- Next.js
+- React
+- Three.js with React Three Fiber and Drei
+- MongoDB with Mongoose
+- Radix UI, Framer Motion, Lucide React, and Sonner
+
+## Project Status
+
+The app is deployed and actively being refined for smoother 3D interactions, stronger responsive behavior, and a more polished editor experience.
