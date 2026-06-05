@@ -80,9 +80,11 @@ export async function GET(request: Request) {
   const savedSlot = scene?.scenes?.find((item) => item.slot === slot);
 
   return NextResponse.json({
+    saved: Boolean(savedSlot),
     objects: savedSlot?.objects || (slot === "room-1" ? scene?.objects || [] : []),
     theme: savedSlot?.theme || "cozy",
-    slots: scene?.scenes?.map((item) => ({ slot: item.slot, theme: item.theme })) || []
+    nightMode: Boolean(savedSlot?.nightMode),
+    slots: scene?.scenes?.map((item) => ({ slot: item.slot, theme: item.theme, nightMode: Boolean(item.nightMode) })) || []
   });
 }
 
@@ -92,8 +94,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { objects, slot = "room-1", theme = "cozy" } = await request.json();
+  const { objects, slot = "room-1", theme = "cozy", nightMode = false } = await request.json();
   const normalizedObjects = normalizeObjects(objects);
+  const savedNightMode = Boolean(nightMode);
 
   await connectDB();
   const scene = await Scene.findOne({ userId });
@@ -102,16 +105,16 @@ export async function POST(request: Request) {
     await Scene.create({
       userId,
       objects: slot === "room-1" ? normalizedObjects : [],
-      scenes: [{ slot, theme, objects: normalizedObjects }]
+      scenes: [{ slot, theme, nightMode: savedNightMode, objects: normalizedObjects }]
     });
   } else {
-    const scenes = [...(((scene as { scenes?: unknown[] }).scenes || []) as Array<{ slot: string; theme: string; objects: unknown[] }>)];
+    const scenes = [...(((scene as { scenes?: unknown[] }).scenes || []) as Array<{ slot: string; theme: string; nightMode?: boolean; objects: unknown[] }>)];
     const index = scenes.findIndex((item) => item.slot === slot);
 
     if (index >= 0) {
-      scenes[index] = { slot, theme, objects: normalizedObjects };
+      scenes[index] = { slot, theme, nightMode: savedNightMode, objects: normalizedObjects };
     } else {
-      scenes.push({ slot, theme, objects: normalizedObjects });
+      scenes.push({ slot, theme, nightMode: savedNightMode, objects: normalizedObjects });
     }
 
     (scene as unknown as { scenes: typeof scenes }).scenes = scenes;

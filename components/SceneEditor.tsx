@@ -477,14 +477,17 @@ export default function SceneEditor({ user, onLogout }: Props) {
     const starter = starterForSlot(slot);
     if (response.ok) {
       const data = await response.json();
-      const loadedObjects = data.objects.map(cleanObject);
-      setObjects(loadedObjects.length ? loadedObjects : starter.objects);
-      setTheme(loadedObjects.length ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
+      const hasSavedScene = Boolean(data.saved);
+      const loadedObjects = Array.isArray(data.objects) ? data.objects.map(cleanObject) : [];
+      setObjects(hasSavedScene ? loadedObjects : starter.objects);
+      setTheme(hasSavedScene ? ((data.theme || starter.theme) as ThemeKey) : starter.theme);
+      setNightMode(hasSavedScene ? Boolean(data.nightMode) : false);
       setSelectedObjectId(null);
-      setStatus(loadedObjects.length ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
+      setStatus(hasSavedScene ? "Scene loaded" : `${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     } else {
       setObjects(starter.objects);
       setTheme(starter.theme);
+      setNightMode(false);
       setStatus(`${sceneSlots.find((item) => item.value === slot)?.label || "Room"} preset loaded`);
     }
   }
@@ -616,7 +619,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     const response = await fetch("/api/scene", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ objects: savedObjects, slot: sceneSlot, theme })
+      body: JSON.stringify({ objects: savedObjects, slot: sceneSlot, theme, nightMode })
     });
     setStatus(response.ok ? "Saved" : "Save failed");
     playSound(response.ok ? "save" : "delete");
@@ -632,6 +635,7 @@ export default function SceneEditor({ user, onLogout }: Props) {
     const starter = starterForSlot(sceneSlot);
     setObjects(starter.objects);
     setTheme(starter.theme);
+    setNightMode(false);
     setSelectedObjectId(null);
     setStatus(`${sceneSlots.find((item) => item.value === sceneSlot)?.label || "Room"} reset`);
     playSound("switch");

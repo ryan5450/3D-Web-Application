@@ -20,6 +20,7 @@ const SceneSlotSchema = new Schema(
   {
     slot: { type: String, required: true },
     theme: { type: String, required: true, default: "cozy" },
+    nightMode: { type: Boolean, required: true, default: false },
     objects: {
       type: [SceneObjectSchema],
       default: []
