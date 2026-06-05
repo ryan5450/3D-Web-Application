@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import AuthPanel from "@/components/AuthPanel";
 import SceneEditor from "@/components/SceneEditor";
+import { useTabBusy } from "@/components/useTabBusy";
 
 export type User = {
   email: string;
@@ -11,6 +12,8 @@ export type User = {
 
 export default function AppShell() {
   const [user, setUser] = useState<User | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  useTabBusy(checkingSession, "Loading");
 
   useEffect(() => {
     async function loadUser() {
@@ -24,6 +27,8 @@ export default function AppShell() {
         }
       } catch {
         setUser(null);
+      } finally {
+        setCheckingSession(false);
       }
     }
 
